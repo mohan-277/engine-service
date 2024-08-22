@@ -1,0 +1,43 @@
+I need  build the net run rate also so for this  NRR
+
+Net Run Rate (NRR) has become the preferred method of breaking ties in multi-team one-day international tournaments. It is often misunderstood, but really quite simple to understand.
+
+A team's net run rate is calculated by deducting from the average runs per over scored by that team throughout the competition, the average runs per over scored against that team throughout the competition.
+
+In the event of a team being all out in less than its full quota of overs, the calculation of its net run rate shall be based on the full quota of overs to which it would have been entitled and not on the number of overs in which the team was dismissed.
+
+Only those matches where results are achieved will count for the purpose of net run rate calculations. Where a match is abandoned, but a result is achieved under Duckworth/Lewis, for net run rate purposes Team 1 will be accredited with Team 2's Par Score on abandonment off the same number of overs faced by Team 2. Where a match is concluded but with Duckworth/Lewis having been applied at an earlier point in the match, Team 1 will be accredited with 1 run less than the final Target Score for Team 2 off the total number of overs allocated to Team 2 to reach the target.
+
+Let's take as an example South Africa's net run-rate in the 1999 World Cup. South Africa's listing in the Group A points table published in the group stages was as follows:
+
+                      P  W  L NR T Pts Net-RR    For        Aga
+South Africa          3  3  -  - -   6 +1.495  678/147.2  466/150
+The columns we are looking at here are the last three: "Net-RR", "For" and "Aga". The figure in the "Net-RR" column is achieved by subtracting the answer of the division in the "Aga" column from the answer to the division in the "For" column.
+
+To use this example:
+
+FOR
+South Africa had scored, so far in the tournament:
+
+Against India, 254 runs (for 6 wkts) from 47.2 overs
+Against Sri Lanka, 199 runs (for 9 wkts) from 50 overs
+Against England, 225 runs (for 7 wkts) from 50 overs
+Across the three games, South Africa scored 678 runs in a total of 147 overs and 2 balls (actually 147.333 overs), a rate of 678/147.333 or 4.602 rpo.
+
+AGAINST
+Teams opposing South Africa scored:
+India, 253 (for 5 wkts) from 50 overs.
+Sri Lanka, 110 all out from 35.2 overs.
+England, 103 all out from 41 overs.
+In the case of Sri Lanka and England, because they were all out before their allotted 50 overs expired, the run rate is calculated as if they had scored their runs over the full 50 overs.
+
+Therefore, the run-rate scored against South Africa across the first three games is calculated on the basis of 466 runs in a total of 50 + 50 + 50 = 150 overs, a rate of 466/150 or 3.107 rpo.
+
+NET-RR
+The net run-rate is, therefore,
+
+  4.602  Run-rate for
+  3.107  Run-rate against
+  =====
++ 1.495  ANSWER
+  =====
