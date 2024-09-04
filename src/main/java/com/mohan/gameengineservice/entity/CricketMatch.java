@@ -1,16 +1,15 @@
 package com.mohan.gameengineservice.entity;
 
+import com.mohan.gameengineservice.entity.constants.MatchStage;
 import com.mohan.gameengineservice.entity.constants.MatchType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.context.annotation.Primary;
 
-import java.sql.Time;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 @Entity
 @Table(name = "cricket_matches")
@@ -20,31 +19,40 @@ import java.util.List;
 @NoArgsConstructor
 public class CricketMatch {
 
-//    List<Innings> list;
-//    MatchType type;
-//    Date date;
-//    Team A;
-//    Team B;
-//    Time startTime;
-//    Time endTime;
-//    Location location;
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private String stadiumName;
-    private String matchType; // e.g., "T20", "ODI", "Test"
-    private String currentPlayingTeam;
-    private String currentScore;
-    private String currentWickets;
-    private String currentOvers;
-    private String chaseText; // e.g., "111 runs needed to win in 60 balls"
-    private String secondTeamName;
-    private String secondTeamScore;
-    private String secondTeamWickets;
-    private String secondTeamOvers;
+    private Long id;
 
-    private LocalDateTime startTime; // Match start time
-    private LocalDateTime endTime;
+    private String stadiumName;
+
+    private boolean toss; // this represents the toss result
+    private String tossDecision; // e.g., "batting" or "bowling"
+    @ManyToOne
+    @JoinColumn(name = "team_a_id", nullable = false) // Column to store Team A ID
+    private Team teamA;
+
+    @ManyToOne
+    @JoinColumn(name = "team_b_id", nullable = false) // Column to store Team B ID
+    private Team teamB;
+
+    private LocalDateTime matchDateTime;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id", nullable = false)
+    private Location location;
+
+
+    private String matchType; // e.g., IPL, T20, ODI, Test
+
+    private String matchStage; // e.g., Group Stage, Playoffs, Semifinals, Finals
+
+    private String matchGroup; // Group A or Group B
+
+    @OneToMany(mappedBy = "match", cascade = CascadeType.ALL)
+    private List<Innings> innings = new ArrayList<>(); // List of innings in the match
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tournament_id", nullable = false)
+    private Tournament tournament;
+
 }

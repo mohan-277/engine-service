@@ -1,9 +1,12 @@
 package com.mohan.gameengineservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+
+
 @Entity
 @Getter
 @Setter
@@ -11,6 +14,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class Player {
+
 //    String name;
 //    String dateOfBirth;
 //    String specialization;
@@ -32,15 +36,21 @@ public class Player {
     private String gender;
     private String country;
 
-    private int playedMatches;
-    private long runs;
-    private int highScore;
-    private double strikeRate;
-    private int numberOf50s;
-    private int numberOf100s;
+    private Integer playedMatches;
+    private Long runs;
+    private Long wickets;
+    private Integer highScore;
+    private Double strikeRate;
+    private Integer numberOf50s;
+    private Integer numberOf100s;
 
 
     @Lob
     @Column(name = "profile_picture", columnDefinition="LONGBLOB")
     private byte[] profilePicture;
+
+    @ManyToOne
+    @JoinColumn(name = "team_id")
+    @JsonIgnore
+    private Team team;
 }

@@ -1,13 +1,9 @@
 package com.mohan.gameengineservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -15,10 +11,35 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Team {
+
      @Id
-     String name;
-     String Country;
-     @OneToMany
-     List<Player> Players;
+     @GeneratedValue(strategy = GenerationType.IDENTITY)
+     private Long id;
+     private  String name;
+     private  String country;
+     private String teamCaptain;
+
+
+     private String coach;
+
+     private String owner;
+
+
+     @ManyToOne
+     @JoinColumn(name = "tournament_id")
+     private Tournament tournament;
+
+
+     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+     private List<Player> players = new ArrayList<>();    // total 15 player 5 bowlers, 5 batsmen, 5 all-rounder this is simple
+
+     private int totalPoints;
+
+     @Lob
+     @Column(name = "logo")
+     private byte[] logo; // For storing the team's logo this is for the landing page of the teams
+     // according to the requirement we will use
+     private String icon; // For storing a text or URL for the team's icon  this for the icon on the matches
 }
