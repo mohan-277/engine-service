@@ -48,4 +48,17 @@ public class Innings {  // innings is just means a  batting not more than that
 //    @OneToMany(mappedBy = "inning", cascade = CascadeType.ALL)
 //    private List<PlayerScore> playerScores = new ArrayList<>();
 
+    @ManyToOne
+    @JoinColumn(name = "current_striker_id")
+    private PlayerObject currentStriker; // The player currently batting
+
+    @ManyToOne
+    @JoinColumn(name = "current_non_striker_id")
+    private PlayerObject currentNonStriker; // The player at the other end
+
+    @ManyToOne
+    @JoinColumn(name = "current_bowler_id")
+    private PlayerObject currentBowler; // The player currently bowling
+
+
 }

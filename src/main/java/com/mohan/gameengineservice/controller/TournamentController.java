@@ -6,6 +6,7 @@ import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.CricketMatch;
 import com.mohan.gameengineservice.entity.Tournament;
 import com.mohan.gameengineservice.entity.constants.TournamentStatus;
+import com.mohan.gameengineservice.exceptions.TeamNotFoundException;
 import com.mohan.gameengineservice.repository.TournamentRepository;
 import com.mohan.gameengineservice.service.TournamentService;
 import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
@@ -26,7 +27,7 @@ import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @RestController
 @RequestMapping("/api/admin/tournaments")
-@CrossOrigin("http://localhost:5173/")
+@CrossOrigin("http://localhost:3000/")
 public class TournamentController {
 
 
@@ -66,7 +67,12 @@ public class TournamentController {
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
+        }
+        catch (TeamNotFoundException e) {
+            // Handle team not found scenario
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+        catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during team registration");
@@ -84,6 +90,8 @@ public class TournamentController {
 //    }
 
 
+
+    // this will show how many team registered in the particular tournament I'd admin access
     @GetMapping("/{tournamentId}/teams")
     public ResponseEntity<List<TeamSummaryDTO>> getRegisteredTeams(@PathVariable Long tournamentId) {
         try {
@@ -97,7 +105,7 @@ public class TournamentController {
 
 
     // this is for the schedule api after registering the 6 team then it need to hit this api
-    @PostMapping("/tournament/{tournamentId}/schedule")
+    @PostMapping("/{tournamentId}/schedule")
     public ResponseEntity<?> scheduleRoundRobin(@PathVariable Long tournamentId) {
         try {
             List<MatchDetailsDTO> matchDetails = matchSchedulingService.scheduleGroupStageMatches(tournamentId);
@@ -112,8 +120,10 @@ public class TournamentController {
     // after scheduling the match it will give the list of play-offs, semifinals, final
     @GetMapping("/{tournamentId}/matches")
     public ResponseEntity<Map<String, Map<String, List<MatchDetailsDTO>>>> getMatchesByTournamentId(@PathVariable Long tournamentId) {
-        Map<String, Map<String, List<MatchDetailsDTO>>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
-        return ResponseEntity.ok(matches);
+        System.out.println("testing called");
+//        Map<String, Map<String, List<MatchDetailsDTO>>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
+//        return ResponseEntity.ok(matches);
+        return null;
     }
 
 

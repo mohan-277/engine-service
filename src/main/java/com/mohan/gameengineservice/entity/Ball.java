@@ -36,7 +36,7 @@ public class Ball {
         Over over = new Over();
         List<Ball>  balls = new ArrayList<>(6);
         Ball ball = new Ball();
-        ball.ballType= BallType.wide;
+        ball.ballType= BallType.WIDE;
         ball.ballSpeed = 1.0;
         ball.playedBy = new PlayerObject();
         ball.bowledBy = new PlayerObject();

@@ -19,6 +19,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class TournamentServiceImpl implements TournamentService {
+    public TournamentServiceImpl(TournamentRepository tournamentRepository, TeamRegistrationRepository teamRegistrationRepository, TeamRepository teamRepository, CoachRepository coachRepository, LocationRepository locationRepository, CricketMatchRepository cricketMatchRepository) {
+        this.tournamentRepository = tournamentRepository;
+        this.teamRegistrationRepository = teamRegistrationRepository;
+        this.teamRepository = teamRepository;
+        this.coachRepository = coachRepository;
+        this.locationRepository = locationRepository;
+        this.cricketMatchRepository = cricketMatchRepository;
+    }
 
     @Autowired
     private TournamentRepository tournamentRepository;
@@ -72,7 +80,7 @@ public class TournamentServiceImpl implements TournamentService {
                             .map(registration -> {
                                 Team team = registration.getTeam();
                                 return new TeamSummaryDTO(
-                                        Math.toIntExact(team.getId()),  // Convert Long to Integer
+                                        Math.toIntExact(team.getTeamId()),  // Convert Long to Integer
                                         team.getName(),
                                         team.getCountry(),
                                         team.getTeamCaptain(),
@@ -250,8 +258,20 @@ public class TournamentServiceImpl implements TournamentService {
         if (tournament.getNumberOfTeams() < 6) {
             throw new IllegalArgumentException("Tournament not valid for registration");
         }
+        // Check if the tournament has reached its team limit
+        if (tournament.getNumberOfTeams() <= tournament.getTeamRegistrations().size()) {
+            throw new IllegalArgumentException("Tournament is full. Registration not allowed.");
+        }
         Team team = teamRepository.findById(teamRegistrationDTO.getTeamID())
                 .orElseThrow(() -> new Exception("Team not found"));
+
+
+        // Check if the team is already registered for the tournament
+        boolean isAlreadyRegistered = teamRegistrationRepository.existsByTournamentIdAndTeamTeamId(tournamentId, team.getTeamId());
+        if (isAlreadyRegistered) {
+            throw new IllegalArgumentException("The team is already registered for this tournament");
+        }
+
 
         TeamRegistration registration = new TeamRegistration();
         registration.setTournament(tournament);
@@ -265,8 +285,8 @@ public class TournamentServiceImpl implements TournamentService {
             groupType = determineDefaultGroup(tournamentId);
         }
 
-        long groupACount = teamRegistrationRepository.countByTournamentIdAndGroup(tournamentId, "Group A");
-        long groupBCount = teamRegistrationRepository.countByTournamentIdAndGroup(tournamentId, "Group B");
+        long groupACount = teamRegistrationRepository.countByTournamentIdAndGroupType(tournamentId, "Group A");
+        long groupBCount = teamRegistrationRepository.countByTournamentIdAndGroupType(tournamentId, "Group B");
 
         if ("Group A".equals(groupType) && groupACount >= tournament.getNumberOfTeams() / 2) {
             throw new IllegalArgumentException("Group A is full");
@@ -275,15 +295,15 @@ public class TournamentServiceImpl implements TournamentService {
             throw new IllegalArgumentException("Group B is full");
         }
 
-        registration.setGroup(groupType);
+        registration.setGroupType(groupType);
         teamRegistrationRepository.save(registration);
 
         return "Team registered successfully in " + groupType;
     }
 
     private String determineDefaultGroup(Long tournamentId) {
-        long groupACount = teamRegistrationRepository.countByTournamentIdAndGroup(tournamentId, "Group A");
-        long groupBCount = teamRegistrationRepository.countByTournamentIdAndGroup(tournamentId, "Group B");
+        long groupACount = teamRegistrationRepository.countByTournamentIdAndGroupType(tournamentId, "Group A");
+        long groupBCount = teamRegistrationRepository.countByTournamentIdAndGroupType(tournamentId, "Group B");
 
         return groupACount <= groupBCount ? "Group A" : "Group B";
     }

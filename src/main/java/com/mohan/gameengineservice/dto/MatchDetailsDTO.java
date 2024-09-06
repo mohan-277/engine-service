@@ -21,7 +21,7 @@ public class MatchDetailsDTO {
     private LocalDateTime matchDateTime;
     private String location;// Include the stage of the match in the DTO
     private String matchType; // Match type (e.g., IPL, T20, ODI, Test)
-    private String matchStage; // Match stage (e.g., Playoffs, Semifinals, Finals)
+    private MatchStage matchStage; // Match stage (e.g., Playoffs, Semifinals, Finals)
     private String matchGroup; // Group A or Group B
     private boolean live;
 

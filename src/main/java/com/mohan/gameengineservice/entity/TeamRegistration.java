@@ -22,7 +22,8 @@ public class TeamRegistration {
     @JoinColumn(name = "tournament_id")
     private Tournament tournament;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+//    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "team_id")
     private Team team;
 
@@ -30,7 +31,7 @@ public class TeamRegistration {
 //    @JoinColumn(name = "coach_id")
 //    private Coach coach;
 
-    private String group;
+    private String groupType;
     private String coachName;
 
     private LocalDateTime registrationDate;

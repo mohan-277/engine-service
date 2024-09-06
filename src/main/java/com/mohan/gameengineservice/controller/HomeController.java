@@ -8,6 +8,7 @@ import com.mohan.gameengineservice.entity.CricketMatch;
 import com.mohan.gameengineservice.entity.Innings;
 import com.mohan.gameengineservice.entity.Player;
 import com.mohan.gameengineservice.entity.Team;
+import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.repository.CricketMatchRepository;
 import com.mohan.gameengineservice.repository.PlayerRepository;
 import com.mohan.gameengineservice.repository.TeamRepository;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/engine-service")
-@CrossOrigin("http://localhost:5173/")
+@CrossOrigin("http://localhost:3000/")
 public class HomeController {
 
     @Autowired
@@ -168,6 +169,17 @@ public class HomeController {
         return teamRepository.findAllTeamSummaries();
     }
 
+
+    @GetMapping("/list-teams-summary/{coachId}")
+    public ResponseEntity<?> getAllTeamSummary(@PathVariable Long coachId) {
+        try {
+            TeamSummary teamSummary = teamService.getTeamSummary(coachId);
+            return ResponseEntity.ok(teamSummary);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("coach id not found");
+        }
+    }
+
     @GetMapping("/list-teams/{teamId}")
     public Team getAllTeams(@PathVariable Integer teamId) {
         return teamRepository.findById(teamId).orElseThrow(() -> new RuntimeException("Team not found"));
@@ -239,6 +251,12 @@ public class HomeController {
         return ResponseEntity.ok(match);
     }
 
+
+    @PostMapping("/{teamId}/players")
+    public ResponseEntity<String> addPlayersToTeam(@PathVariable Long teamId, @RequestBody List<PlayerDTO> playerDTOs) {
+        teamService.setPlayersForTeam(teamId, playerDTOs);
+        return ResponseEntity.ok("Players added successfully");
+    }
 
 
 

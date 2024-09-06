@@ -44,7 +44,7 @@ public class CricketMatch {
 
     private String matchType; // e.g., IPL, T20, ODI, Test
 
-    private String matchStage; // e.g., Group Stage, Playoffs, Semifinals, Finals
+    private MatchStage matchStage; // e.g., Group Stage, Playoffs, Semifinals, Finals
 
     private String matchGroup; // Group A or Group B
 
@@ -54,5 +54,9 @@ public class CricketMatch {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tournament_id", nullable = false)
     private Tournament tournament;
+
+    private boolean isLive;
+
+    private String result; // it is a string win by some runs or lost by some runs or tie like this
 
 }

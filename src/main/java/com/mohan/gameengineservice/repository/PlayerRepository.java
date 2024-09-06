@@ -1,6 +1,7 @@
 package com.mohan.gameengineservice.repository;
 
 import com.mohan.gameengineservice.entity.Player;
+import com.mohan.gameengineservice.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,8 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 
     @Query("SELECT DISTINCT TRIM(UPPER(t.country)) FROM Player t")
     List<String> findDistinctCountries();
+
+    List<Player> findByTeamAndSpecialization(Team team, String specialization);
+
+
 }
