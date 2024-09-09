@@ -13,6 +13,8 @@ import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
 import com.mohan.gameengineservice.service.impl.MatchService;
 
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -29,6 +31,11 @@ import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 @RequestMapping("/api/admin/tournaments")
 @CrossOrigin("http://localhost:3000/")
 public class TournamentController {
+
+
+
+    private static final Logger logger = LoggerFactory.getLogger(TournamentController.class);
+
 
 
     TournamentService tournamentService;
@@ -119,11 +126,17 @@ public class TournamentController {
 
     // after scheduling the match it will give the list of play-offs, semifinals, final
     @GetMapping("/{tournamentId}/matches")
-    public ResponseEntity<Map<String, Map<String, List<MatchDetailsDTO>>>> getMatchesByTournamentId(@PathVariable Long tournamentId) {
-        System.out.println("testing called");
-//        Map<String, Map<String, List<MatchDetailsDTO>>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
-//        return ResponseEntity.ok(matches);
-        return null;
+    public ResponseEntity<?> getMatchesByTournamentId(@PathVariable Long tournamentId) {
+        logger.info("Fetching matches for tournament ID: {}", tournamentId);
+
+        try {
+            Map<String, List<CricketMatch>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
+            return ResponseEntity.ok(matches);
+        } catch (Exception e) {
+            // Log the exception and return an appropriate response
+            logger.error("Error fetching matches for tournament ID: {}", tournamentId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
 

@@ -1,7 +1,7 @@
 package com.mohan.gameengineservice.entity.constants;
 
 public enum MatchType {
-    T20,oneDay,testMatch;  // 20 overs , 50 overs, 100 overs
+    T20,ONE_DAY,TEST_MATCH;  // 20 overs , 50 overs, 100 overs
 }
 
 

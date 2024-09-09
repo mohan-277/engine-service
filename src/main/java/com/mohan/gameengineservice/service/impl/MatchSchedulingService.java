@@ -8,6 +8,9 @@ import com.mohan.gameengineservice.repository.CricketMatchRepository;
 import com.mohan.gameengineservice.repository.LocationRepository;
 import com.mohan.gameengineservice.repository.TeamRegistrationRepository;
 import com.mohan.gameengineservice.repository.TournamentRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class MatchSchedulingService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     private CricketMatchRepository cricketMatchRepository;
@@ -63,76 +69,71 @@ public class MatchSchedulingService {
 //        return result;
 //    }
 
-    public Map<String, Map<String, List<MatchDetailsDTO>>> getMatchesByTypeAndGroup(Long tournamentId) {
+//    public Map<String, Map<String, List<MatchDetailsDTO>>> getMatchesByTypeAndGroup(Long tournamentId) {
+//
+//        List<CricketMatch> allMatches = cricketMatchRepository.findCricketMatchesByTournamentId(tournamentId);
+//
+//        // Initialize result map
+//        Map<String, Map<String, List<MatchDetailsDTO>>> result = new HashMap<>();
+//        result.put("playoffs", new HashMap<>());
+//        result.put("semifinals", new HashMap<>());
+//        result.put("finals", new HashMap<>());
+//
+//        // Fetch team groups
+//        Map<Long, String> teamGroupMap = teamRegistrationRepository.findTeamGroupMapByTournamentId(tournamentId);
+//
+//        // Categorize matches
+//        for (CricketMatch match : allMatches) {
+//            String groupA = teamGroupMap.get(match.getTeamA().getTeamId());
+//            String groupB = teamGroupMap.get(match.getTeamB().getTeamId());
+//
+//            MatchDetailsDTO matchDetail = convertToMatchDetailsDTO(match);
+//
+//            // Assume teams are in "Group A" or "Group B"
+//            String groupKeyA = "Group A".equals(groupA) ? "Group A" : "Group B";
+//            String groupKeyB = "Group A".equals(groupB) ? "Group A" : "Group B";
+//
+//            // Determine the match type
+//            String matchType = match.getMatchType().toLowerCase(); // Convert to lower case to match map keys
+//
+//            if (result.containsKey(matchType)) {
+//                result.get(matchType).computeIfAbsent(groupKeyA, k -> new ArrayList<>()).add(matchDetail);
+//                if (!groupKeyA.equals(groupKeyB)) { // Avoid adding duplicate matches if groups are the same
+//                    result.get(matchType).computeIfAbsent(groupKeyB, k -> new ArrayList<>()).add(matchDetail);
+//                }
+//            }
+//        }
+//
+//        return result;
+//
+//    }
 
-        System.out.println("this is called");
-        // Step 1: Fetch all matches for the given tournament ID
-        // Query the repository to get all matches associated with the given tournamentId.
-        List<CricketMatch> allMatches = cricketMatchRepository.findCricketMatchesByTournamentId(tournamentId);
 
-        // Debugging: Print the fetched matches
-        System.out.println("Fetched Matches: " + allMatches);
+    public Map<String, List<CricketMatch>> getMatchesByTypeAndGroup(Long tournamentId) {
+        // Assuming you have a method to get matches by tournament ID
+        List<CricketMatch> allMatches = cricketMatchRepository.findMatchesByTournamentId(tournamentId);
 
-        // Step 2: Initialize result map
-        // Create a nested map to store matches categorized by type (playoffs, semifinals, finals) and group (e.g., Group A, Group B).
-        Map<String, Map<String, List<MatchDetailsDTO>>> result = new HashMap<>();
-        result.put("playoffs", new HashMap<>());
-        result.put("semifinals", new HashMap<>());
-        result.put("finals", new HashMap<>());
+        // Filter matches based on type and group
+        Map<String, List<CricketMatch>> result = new HashMap<>();
+        result.put("Group A", new ArrayList<>());
+        result.put("Group B", new ArrayList<>());
 
-        // Debugging: Print the initialized result map
-        System.out.println("Initialized Result Map: " + result);
-
-        // Step 3: Fetch team groups
-        // Query the repository to get a map of team IDs to their respective groups for the given tournamentId.
-        Map<Long, String> teamGroupMap = teamRegistrationRepository.findTeamGroupMapByTournamentId(tournamentId);
-
-        // Debugging: Print the fetched team group map
-        System.out.println("Team Group Map: " + teamGroupMap);
-
-        // Step 4: Separate matches by type and group
-        // Iterate over all matches to categorize them into playoffs, semifinals, or finals and into groups A or B.
         for (CricketMatch match : allMatches) {
-            // Fetch the groups for team A and team B
-            String groupA = teamGroupMap.get(match.getTeamA().getTeamId());
-            String groupB = teamGroupMap.get(match.getTeamB().getTeamId());
-
-            // Debugging: Print team groups for the current match
-            System.out.println("Match Teams and Groups: Team A ID = " + match.getTeamA().getTeamId() +
-                    ", Group = " + groupA +
-                    "; Team B ID = " + match.getTeamB().getTeamId() +
-                    ", Group = " + groupB);
-
-            // Convert the current match to a MatchDetailsDTO
-            MatchDetailsDTO matchDetail = convertToMatchDetailsDTO(match);
-
-            // Determine the group key for team A and team B
-            // For simplicity, assume teams are either in "Group A" or "Group B"
-            String groupKeyA = "Group A".equals(groupA) ? "Group A" : "Group B";
-            String groupKeyB = "Group A".equals(groupB) ? "Group A" : "Group B";
-
-            // Determine the match type (e.g., playoffs, semifinals, finals)
-            String matchType = match.getMatchType();
-
-            // Check if the result map contains the match type
-            if (result.containsKey(matchType)) {
-                // Compute or get the existing list for group A
-                result.get(matchType).computeIfAbsent(groupKeyA, k -> new ArrayList<>()).add(matchDetail);
-                // Compute or get the existing list for group B (if necessary)
-                result.get(matchType).computeIfAbsent(groupKeyB, k -> new ArrayList<>()).add(matchDetail);
+            if ("Group A".equals(match.getMatchGroup())) {
+                result.get("Group A").add(match);
+            } else if ("Group B".equals(match.getMatchGroup())) {
+                result.get("Group B").add(match);
             }
-
-            // Debugging: Print the updated result map after processing each match
-            System.out.println("Updated Result Map: " + result);
         }
 
-        // Step 5: Return the categorized matches
-        // Return the final result map containing matches organized by type and group.
         return result;
     }
-
-
-
+    public List<CricketMatch> findMatchesByTournament(Long tournamentId) {
+        TypedQuery<CricketMatch> query = entityManager.createQuery(
+                "select c from CricketMatch c where c.tournament.id = :tournamentId", CricketMatch.class);
+        query.setParameter("tournamentId", tournamentId);
+        return query.getResultList();
+    }
 
     private MatchDetailsDTO convertToMatchDetailsDTO(CricketMatch match) {
         MatchDetailsDTO matchDetail = new MatchDetailsDTO();
