@@ -4,10 +4,12 @@ package com.mohan.gameengineservice.controller;
 import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.CricketMatch;
+import com.mohan.gameengineservice.entity.Location;
 import com.mohan.gameengineservice.entity.Tournament;
 import com.mohan.gameengineservice.entity.constants.TournamentStatus;
 import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.exceptions.TeamNotFoundException;
+import com.mohan.gameengineservice.repository.CricketMatchRepository;
 import com.mohan.gameengineservice.repository.TournamentRepository;
 import com.mohan.gameengineservice.service.TournamentService;
 import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
@@ -22,6 +24,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,6 +44,8 @@ public class TournamentController {
 
     TournamentService tournamentService;
     MatchSchedulingService matchSchedulingService;
+
+    CricketMatchRepository cricketMatchRepository;
 
     public TournamentController(TournamentService tournamentService, MatchSchedulingService matchSchedulingService) {
         this.tournamentService = tournamentService;
@@ -161,6 +166,20 @@ public class TournamentController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while retrieving the match: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/matches/{id}")
+    public ResponseEntity<?> updateMatch(@PathVariable Long id,
+                                         @RequestParam(required = false) LocalDateTime newDateTime,
+                                         @RequestParam(required = false) Location newLocation) {
+        try {
+            String result = tournamentService.updateCricketMatch(id, newDateTime, newLocation);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Match not found with ID: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating match: " + e.getMessage());
         }
     }
 }

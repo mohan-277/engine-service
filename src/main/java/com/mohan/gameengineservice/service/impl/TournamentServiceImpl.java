@@ -4,6 +4,7 @@ import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.*;
 import com.mohan.gameengineservice.entity.constants.MatchStage;
 import com.mohan.gameengineservice.entity.constants.TournamentStatus;
+import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.repository.*;
 import com.mohan.gameengineservice.service.TournamentService;
 import jakarta.transaction.Transactional;
@@ -101,6 +102,20 @@ public class TournamentServiceImpl implements TournamentService {
     public CricketMatch getCricketMatchById(Long matchId) {
         return cricketMatchRepository.findById(matchId).get();
     }
+
+    public String updateCricketMatch(Long matchId, LocalDateTime newDateTime, Location newLocation) {
+        CricketMatch existingMatch = cricketMatchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match with ID: " + matchId + " does not exist."));
+
+            existingMatch.setMatchDateTime(newDateTime);
+            existingMatch.setLocation(newLocation);
+
+        cricketMatchRepository.save(existingMatch);
+
+        return "Match with ID: " + matchId + " has been successfully rescheduled.";
+
+    }
+
 
 //    public List<TeamSummary> getRegisteredTeams(Long tournamentId) {
 //        // Retrieve team summaries using the projection interface
