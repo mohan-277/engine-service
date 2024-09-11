@@ -6,6 +6,7 @@ import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.CricketMatch;
 import com.mohan.gameengineservice.entity.Tournament;
 import com.mohan.gameengineservice.entity.constants.TournamentStatus;
+import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.exceptions.TeamNotFoundException;
 import com.mohan.gameengineservice.repository.TournamentRepository;
 import com.mohan.gameengineservice.service.TournamentService;
@@ -63,6 +64,13 @@ public class TournamentController {
     @GetMapping("/get-all-tournaments")
     public ResponseEntity<List<TournamentDTO>> getAllTournamentsCreatedAdmin() {
             return ResponseEntity.ok(tournamentService.getAllTournaments());
+    }
+
+    @GetMapping("/tournament/{id}")
+    public ResponseEntity<TournamentDTO> getTournamentById(@PathVariable Long id) {
+        TournamentDTO tournamentDTO = tournamentService.getTournamentById(id);
+        return ResponseEntity.ok(tournamentDTO);
+
     }
 
 
@@ -139,8 +147,21 @@ public class TournamentController {
         }
     }
 
-
-
-
-
+    @GetMapping("/matches/{matchId}")
+    public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
+        try {
+            CricketMatch match = tournamentService.getCricketMatchById(matchId);
+            if (match != null) {
+                return ResponseEntity.ok(match);
+            } else {
+                throw new ResourceNotFoundException("Match not found with ID: " + matchId);
+            }
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving the match: " + e.getMessage());
+        }
+    }
 }
+

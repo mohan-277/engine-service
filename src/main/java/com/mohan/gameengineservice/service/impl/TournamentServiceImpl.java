@@ -91,6 +91,17 @@ public class TournamentServiceImpl implements TournamentService {
                             .collect(Collectors.toList());
     }
 
+    @Override
+    public TournamentDTO getTournamentById(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId).get();
+        return convertToDto(tournament);
+    }
+
+    @Override
+    public CricketMatch getCricketMatchById(Long matchId) {
+        return cricketMatchRepository.findById(matchId).get();
+    }
+
 //    public List<TeamSummary> getRegisteredTeams(Long tournamentId) {
 //        // Retrieve team summaries using the projection interface
 //        return teamRegistrationRepository.findTeamSummariesByTournamentId(tournamentId);

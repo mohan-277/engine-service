@@ -1,8 +1,10 @@
 package com.mohan.gameengineservice.service;
 
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import com.mohan.gameengineservice.dto.TeamRegistrationDTO;
 import com.mohan.gameengineservice.dto.TeamSummaryDTO;
 import com.mohan.gameengineservice.dto.TournamentDTO;
+import com.mohan.gameengineservice.entity.CricketMatch;
 import com.mohan.gameengineservice.entity.Tournament;
 
 import java.util.List;
@@ -15,4 +17,8 @@ public interface TournamentService {
     String registerTeamByTournamentID(Long tournamentId, TeamRegistrationDTO teamRegistrationDTO) throws Exception ;
 
     List<TeamSummaryDTO> getRegisteredTeams(Long tournamentId);
+
+    TournamentDTO getTournamentById(Long tournamentId);
+
+    CricketMatch getCricketMatchById(Long matchId);
 }
