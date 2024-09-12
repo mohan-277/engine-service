@@ -24,6 +24,7 @@ public class Tournament {
     private Long id;
 
     private String tournamentName;
+    private String tournamentType;
     private String location;
     private LocalDateTime startDate;
     private Duration matchInterval;
@@ -33,8 +34,8 @@ public class Tournament {
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamRegistration> teamRegistrations = new ArrayList<>();
 
-    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CricketMatch> matches = new ArrayList<>();
+//    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<CricketMatch> matches = new ArrayList<>();
 
 
     private TournamentStatus status;

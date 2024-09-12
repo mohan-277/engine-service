@@ -13,6 +13,7 @@ import com.mohan.gameengineservice.repository.CricketMatchRepository;
 import com.mohan.gameengineservice.repository.PlayerRepository;
 import com.mohan.gameengineservice.repository.TeamRepository;
 import com.mohan.gameengineservice.service.impl.TeamService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -122,9 +123,9 @@ public class HomeController {
     }
 
     @GetMapping("/list-players/{country}")
-    public List<PlayerDTO> getAllPlayers(@PathVariable String country) {
+    public ResponseEntity<List<PlayerDTO>> getAllPlayers(@PathVariable String country) {
         List<Player> players = playerRepository.findAllByCountry(country);
-        return players.stream()
+        return new ResponseEntity<>(players.stream()
                 .map(player -> {
                     PlayerDTO dto = new PlayerDTO();
                     dto.setId(player.getId());
@@ -143,30 +144,31 @@ public class HomeController {
                     dto.setProfilePicture(player.getProfilePicture()); // Optional
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()), HttpStatus.OK);
     }
 
     @GetMapping("/list-players")
-    public List<Player> getAllPlayers() {
-        System.out.println("testing list of players");
-        return playerRepository.findAll();
+    public ResponseEntity<List<Player>> getAllPlayers() {
+
+        return new ResponseEntity<>(playerRepository.findAll(), HttpStatus.OK);
     }
 
-    // this is for the only country name will return
+    /// this is for the only country name will return
     @GetMapping("/list-players/country")
-    public List<String> getAllPlayersCountry() {
-        return playerRepository.findDistinctCountries();
+    public ResponseEntity<List<String>> getAllPlayersCountry() {
+        return new ResponseEntity<>(playerRepository.findDistinctCountries(), HttpStatus.OK);
     }
 
 
+    /// this is also need to take care of the lazy loading
     @GetMapping("/list-teams")
-    public List<Team> getAllTeams() {
-        return teamRepository.findAll();
+    public ResponseEntity<List<Team>> getAllTeams() {
+        return new ResponseEntity<>(teamRepository.findAll(), HttpStatus.OK);
     }
 
     @GetMapping("/list-teams-summary")
-    public List<TeamSummary> getAllTeamSummary() {
-        return teamRepository.findAllTeamSummaries();
+    public ResponseEntity<List<TeamSummary>> getAllTeamSummary() {
+        return new ResponseEntity<>(teamRepository.findAllTeamSummaries(), HttpStatus.OK);
     }
 
 
@@ -181,11 +183,12 @@ public class HomeController {
     }
 
     @GetMapping("/list-teams/{teamId}")
-    public Team getAllTeams(@PathVariable Integer teamId) {
-        return teamRepository.findById(teamId).orElseThrow(() -> new RuntimeException("Team not found"));
+    public ResponseEntity<Team> getAllTeams(@PathVariable Integer teamId) {
+        return new ResponseEntity<>(teamRepository.findById(teamId).orElseThrow(() -> new RuntimeException("Team not found")), HttpStatus.OK);
     }
 
 
+    /// here this need to be refracted because while creating the team it is giving the duplicate data i need to use lazy or change the return type
     @PostMapping("/create-team")
     public ResponseEntity<?> createTeam(@RequestBody TeamDTO teamDTO) {
 
@@ -218,14 +221,19 @@ public class HomeController {
             player.setTeam(team);
             return player;
         }).collect(Collectors.toList());
-
+        team.setCoachId(generateNextCoachId());
         team.setPlayers(players);
         teamRepository.save(team);
         return new ResponseEntity<>(team, HttpStatus.CREATED);
     }
 
+    public Long generateNextCoachId() {
+        Long maxCoachId = teamRepository.findMaxCoachId(); // Custom method to find max coachId
+        return (maxCoachId == null) ? 1L : maxCoachId + 1;
+    }
 
     // get teams by  id it will help to create a match in between the team
+    /// i think it is not using to create a match as of now
     @PostMapping("/create-match")
     public ResponseEntity<CricketMatch> createMatch(@RequestBody MatchRequest request) {
         Team teamA = teamRepository.findById(request.getTeamAId()).orElseThrow(() -> new RuntimeException("Team A not found"));

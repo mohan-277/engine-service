@@ -91,7 +91,7 @@ public class MatchService {
     }
 
     private void simulateInnings(Innings innings) {
-        int totalOvers = getTotalOvers(innings.getMatch().getMatchType());
+        int totalOvers = getTotalOvers(String.valueOf(innings.getMatch().getMatchType()));
         List<PlayerObject> bowlers = getPlayerObjects(innings.getBowlingTeam(), "Bowler");
         List<PlayerObject> battingOrder = getPlayerObjects(innings.getBattingTeam(), "Batsman");
 
@@ -253,8 +253,8 @@ public class MatchService {
         }
 
         // Update PlayerObject stats with ball information
-        striker.getBalls().add(ball);
-        bowler.getBalls().add(ball);
+//        striker.getBalls().add((Runnable) ball);
+//        bowler.getBalls().add((Runnable) ball);
 
         // Save updated PlayerObject stats
         playerObjectRepository.save(striker);
@@ -355,6 +355,7 @@ public class MatchService {
         }
         return points;
     }
+
 
 }
 

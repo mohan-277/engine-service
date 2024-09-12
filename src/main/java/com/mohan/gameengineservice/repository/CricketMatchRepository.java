@@ -22,7 +22,7 @@ public interface CricketMatchRepository extends JpaRepository<CricketMatch, Long
     @Query("SELECT cm FROM CricketMatch cm WHERE cm.matchType = :matchType AND cm.matchGroup = :matchGroup")
     List<CricketMatch> findByMatchTypeAndGroup(@Param("matchType") String matchType, @Param("matchGroup") String matchGroup);
 
-    @Query(value = "SELECT * FROM testDb.cricket_matches WHERE tournament_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM gameDb.cricket_matches WHERE tournament_id = ?1", nativeQuery = true)
     List<CricketMatch> findMatchesByTournamentId(Long tournamentId);
 
 //    @Query(value = "SELECT * FROM CricketMatch WHERE tournament_id = ?1", nativeQuery = true)

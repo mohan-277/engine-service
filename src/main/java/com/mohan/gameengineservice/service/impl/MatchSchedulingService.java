@@ -71,7 +71,7 @@ public class MatchSchedulingService {
 
 //    public Map<String, Map<String, List<MatchDetailsDTO>>> getMatchesByTypeAndGroup(Long tournamentId) {
 //
-//        List<CricketMatch> allMatches = cricketMatchRepository.findCricketMatchesByTournamentId(tournamentId);
+//        List<CricketMatch> allMatches = cricketMatchRepository.findMatchesByTournamentId(tournamentId);
 //
 //        // Initialize result map
 //        Map<String, Map<String, List<MatchDetailsDTO>>> result = new HashMap<>();
@@ -109,30 +109,25 @@ public class MatchSchedulingService {
 //    }
 
 
-    public Map<String, List<CricketMatch>> getMatchesByTypeAndGroup(Long tournamentId) {
+    public Map<String, List<MatchDetailsDTO>> getMatchesByTypeAndGroup(Long tournamentId) {
         // Assuming you have a method to get matches by tournament ID
         List<CricketMatch> allMatches = cricketMatchRepository.findMatchesByTournamentId(tournamentId);
 
-        // Filter matches based on type and group
-        Map<String, List<CricketMatch>> result = new HashMap<>();
+        // Filter and convert matches based on type and group
+        Map<String, List<MatchDetailsDTO>> result = new HashMap<>();
         result.put("Group A", new ArrayList<>());
         result.put("Group B", new ArrayList<>());
 
         for (CricketMatch match : allMatches) {
+            MatchDetailsDTO matchDetail = convertToMatchDetailsDTO(match);
             if ("Group A".equals(match.getMatchGroup())) {
-                result.get("Group A").add(match);
+                result.get("Group A").add(matchDetail);
             } else if ("Group B".equals(match.getMatchGroup())) {
-                result.get("Group B").add(match);
+                result.get("Group B").add(matchDetail);
             }
         }
 
         return result;
-    }
-    public List<CricketMatch> findMatchesByTournament(Long tournamentId) {
-        TypedQuery<CricketMatch> query = entityManager.createQuery(
-                "select c from CricketMatch c where c.tournament.id = :tournamentId", CricketMatch.class);
-        query.setParameter("tournamentId", tournamentId);
-        return query.getResultList();
     }
 
     private MatchDetailsDTO convertToMatchDetailsDTO(CricketMatch match) {
@@ -142,11 +137,11 @@ public class MatchSchedulingService {
         matchDetail.setTeamB(match.getTeamB().getName());
         matchDetail.setMatchDateTime(match.getMatchDateTime());
         matchDetail.setLocation(match.getLocation().getCountry() + " - " + match.getLocation().getGround());
-        matchDetail.setMatchType(match.getMatchType()); // t20 , ODI , test , IPL
+        matchDetail.setMatchType(String.valueOf(match.getMatchType())); // t20 , ODI , test , IPL
 
         // Set the match stage (e.g., Playoffs, Semifinals, Finals)
         matchDetail.setMatchStage(match.getMatchStage());
-
+        matchDetail.setMatchStatus(TournamentStatus.PLANNED.name()); // this planned
         matchDetail.setMatchGroup(match.getMatchGroup()); // group A or group B
         return matchDetail;
     }
@@ -200,6 +195,74 @@ public class MatchSchedulingService {
         return matchDetails;
     }
 
+//    private List<MatchDetailsDTO> scheduleMatchesForGroup(Tournament tournament, List<Team> teams, String group, LocalDateTime matchDateTime, List<Location> allLocations, Set<Long> usedLocationIds) {
+//        List<MatchDetailsDTO> matchDetailsList = new ArrayList<>();
+//
+//        int numberOfTeams = teams.size();
+//
+//        for (int i = 0; i < numberOfTeams; i++) {
+//            for (int j = i + 1; j < numberOfTeams; j++) {
+//                Team teamA = teams.get(i);
+//                Team teamB = teams.get(j);
+//
+//                // Avoid scheduling matches during night time
+//                while (matchDateTime.getHour() < 6 || matchDateTime.getHour() > 20) {
+//                    matchDateTime = matchDateTime.plusDays(1).withHour(10);
+//                }
+//
+//                // Check if match already exists
+//                boolean matchExists = cricketMatchRepository.existsByTeamAAndTeamBAndMatchDateTime(
+//                        teamA, teamB, matchDateTime);
+//
+//                if (matchExists) {
+//                    continue; // Skip creating this match if it already exists
+//                }
+//
+//                // Find an unused location
+//                Location location = findUnusedLocation(allLocations, usedLocationIds);
+//
+//                if (location == null) {
+//                    throw new RuntimeException("Not enough unique locations available for all matches.");
+//                }
+//
+//                // Mark location as used
+//                usedLocationIds.add(location.getId());
+//
+//                // Create and save the match
+//                CricketMatch match = new CricketMatch();
+//                match.setTeamA(teamA);
+//                match.setTeamB(teamB);
+//                match.setMatchType(tournament.getTournamentName());
+//                match.setMatchDateTime(matchDateTime);
+////                match.setTournament(tournament);
+//                match.setLocation(location);
+//                match.setMatchStage(String.valueOf(MatchStage.PLAYOFF));
+//                match.setMatchGroup(group);
+//
+//                cricketMatchRepository.save(match);
+//
+//                // Create MatchDetailsDTO
+//                MatchDetailsDTO matchDetail = new MatchDetailsDTO();
+//                matchDetail.setMatchId(match.getId());
+//                matchDetail.setTeamA(teamA.getName());
+//                matchDetail.setTeamB(teamB.getName());
+//                matchDetail.setMatchDateTime(matchDateTime);
+//                matchDetail.setLocation(location.getCountry() + " - " + location.getGround());
+//                matchDetail.setMatchType(tournament.getTournamentName());
+//                matchDetail.setMatchGroup(group);
+//                matchDetail.setMatchStage(String.valueOf(MatchStage.PLAYOFF));
+//                matchDetail.setLive(false); // Set to false by default
+//
+//                matchDetailsList.add(matchDetail);
+//
+//                // Move to the next match date
+//                matchDateTime = matchDateTime.plus(tournament.getMatchInterval());
+//            }
+//        }
+//
+//        return matchDetailsList;
+//    }
+
     private List<MatchDetailsDTO> scheduleMatchesForGroup(Tournament tournament, List<Team> teams, String group, LocalDateTime matchDateTime, List<Location> allLocations, Set<Long> usedLocationIds) {
         List<MatchDetailsDTO> matchDetailsList = new ArrayList<>();
 
@@ -239,10 +302,12 @@ public class MatchSchedulingService {
                 match.setTeamB(teamB);
                 match.setMatchType(tournament.getTournamentName());
                 match.setMatchDateTime(matchDateTime);
-                match.setTournament(tournament);
+                match.setTournament(tournament); // Ensure this line is present
                 match.setLocation(location);
-                match.setMatchStage(MatchStage.PLAYOFF);
+                match.setMatchStage(String.valueOf(MatchStage.PLAYOFF));
                 match.setMatchGroup(group);
+
+                System.out.println("Saving match with Tournament: " + match.getTournament());
 
                 cricketMatchRepository.save(match);
 
@@ -255,7 +320,8 @@ public class MatchSchedulingService {
                 matchDetail.setLocation(location.getCountry() + " - " + location.getGround());
                 matchDetail.setMatchType(tournament.getTournamentName());
                 matchDetail.setMatchGroup(group);
-                matchDetail.setMatchStage(MatchStage.PLAYOFF);
+                matchDetail.setMatchStage(String.valueOf(MatchStage.PLAYOFF));
+                matchDetail.setMatchStatus(TournamentStatus.ONGOING.name());
                 matchDetail.setLive(false); // Set to false by default
 
                 matchDetailsList.add(matchDetail);
