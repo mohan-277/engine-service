@@ -26,4 +26,16 @@ public class Wicket {
     private  PlayerObject catchBy;
     @OneToOne
     private  PlayerObject runOutBy;
+
+    public Wicket(PlayerObject playerObject) {
+        this.outPlayer = playerObject;
+    }
+
+    public Wicket(WicketType wicketType) {
+        this.type = wicketType;
+    }
+
+    public WicketType getWicketType() {
+        return type;
+    }
 }

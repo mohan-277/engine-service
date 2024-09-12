@@ -10,23 +10,29 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class PlayerScore {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "player_id")
-    private Player player;
+    private PlayerObject player;
 
     @ManyToOne
-    @JoinColumn(name = "inning_id")
-    private Innings inning;
+    @JoinColumn(name = "innings_id")
+    private Innings innings;
 
-    private int runsScored;
+    private int runs;
     private int ballsFaced;
     private int fours;
     private int sixes;
-    private boolean isOut;
+    private int dotBalls;
+    private int singles;
+    private int twos;
+    private int threes;
 
+    private int oversBowled;
+    private int wicketsTaken;
 
 }

@@ -229,9 +229,10 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         Tournament tournament = Tournament.builder()
-                .tournamentName(tournamentDTO.getName())
+                .tournamentName(tournamentDTO.getTournamentName())
+                .tournamentType(tournamentDTO.getTournamentType())
                 .location(tournamentDTO.getLocation())
-                .startDate(tournamentDTO.getStartDate())
+                .startDate(LocalDateTime.parse(tournamentDTO.getStartDate()))
                 .matchInterval(tournamentDTO.getMatchInterval())
                 .numberOfTeams(tournamentDTO.getNumberOfTeams())
                 .status(TournamentStatus.PLANNED)
@@ -244,9 +245,10 @@ public class TournamentServiceImpl implements TournamentService {
     // this for the easy conversion  to entity
     public Tournament convertToEntity(TournamentDTO dto) {
         Tournament tournament = new Tournament();
-        tournament.setTournamentName(dto.getName());
+        tournament.setTournamentName(dto.getTournamentName());
+        tournament.setTournamentType(dto.getTournamentType());
         tournament.setLocation(dto.getLocation());
-        tournament.setStartDate(dto.getStartDate());
+        tournament.setStartDate(LocalDateTime.parse(dto.getStartDate()));
         tournament.setMatchInterval(dto.getMatchInterval());
         tournament.setNumberOfTeams(dto.getNumberOfTeams());
         // Set default status if needed
@@ -266,6 +268,7 @@ public class TournamentServiceImpl implements TournamentService {
         return new TournamentDTO(
                 tournament.getId(),
                 tournament.getTournamentName(),
+                tournament.getTournamentType(),
                 tournament.getLocation(),
                 tournament.getStartDate(),
                 tournament.getMatchInterval(),
@@ -333,6 +336,7 @@ public class TournamentServiceImpl implements TournamentService {
         return groupACount <= groupBCount ? "Group A" : "Group B";
     }
 
+
    public List<MatchDetailsDTO> getAllMatches(){
         List<CricketMatch> matchDetails = cricketMatchRepository.findAll();
         return convertToMatchDetailsDTOList(matchDetails);
@@ -361,6 +365,31 @@ public class TournamentServiceImpl implements TournamentService {
             matchDetailsDTOList.add(dto);
         }
         return matchDetailsDTOList;
+
+    public TournamentDTO getTournamentById(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId).get();
+        return convertToDto(tournament);
+    }
+
+
+    public MatchDetailsDTO getCricketMatchById(Long matchId){
+      CricketMatch cricketMatch = cricketMatchRepository.findById(matchId).get();
+      return  matchToMatchDetailDTOConverter(cricketMatch);
+    }
+
+    public  MatchDetailsDTO matchToMatchDetailDTOConverter(CricketMatch cricketMatch){
+        MatchDetailsDTO matchDetailsDTO = new MatchDetailsDTO();
+        matchDetailsDTO.setMatchGroup(cricketMatch.getMatchGroup());
+        matchDetailsDTO.setMatchType(cricketMatch.getMatchType());
+        matchDetailsDTO.setMatchId(cricketMatch.getId());
+        matchDetailsDTO.setMatchStage(cricketMatch.getMatchStage());
+        matchDetailsDTO.setTeamA(cricketMatch.getTeamA().getName());
+        matchDetailsDTO.setTeamB(cricketMatch.getTeamB().getName());
+        matchDetailsDTO.setLocation(cricketMatch.getLocation().getCountry());
+        matchDetailsDTO.setMatchDateTime(cricketMatch.getMatchDateTime());
+        matchDetailsDTO.setLive(cricketMatch.isLive());
+        return matchDetailsDTO;
+
     }
 
 

@@ -1,10 +1,7 @@
 package com.mohan.gameengineservice.entity;
 
 import com.mohan.gameengineservice.entity.constants.BallType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -21,7 +18,7 @@ import java.util.List;
 public class Ball {
 
     @Id
-    private  long id;
+    private  Long id;
     private  BallType ballType;
     private  double ballSpeed;
     @OneToOne
@@ -31,6 +28,9 @@ public class Ball {
     private  int run;
     @OneToOne
     private  Wicket wicket;
+
+//    @ManyToOne
+//    private Over over;
 
     public static void main(String[] args) {
         Over over = new Over();
@@ -45,6 +45,17 @@ public class Ball {
         balls.add(ball);
         over.setBalls(balls);
         System.out.println(over);
+    }
+
+    public void setPlayer(Player bowler) {
+
+    }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }
 

@@ -7,9 +7,17 @@ import com.mohan.gameengineservice.entity.Location;
 import com.mohan.gameengineservice.entity.Tournament;
 import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.exceptions.TeamNotFoundException;
+
 import com.mohan.gameengineservice.repository.CricketMatchRepository;
 import com.mohan.gameengineservice.service.TournamentService;
 import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
+import com.mohan.gameengineservice.service.TournamentService;
+import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
+import com.mohan.gameengineservice.service.impl.MatchService;
+
+import com.mohan.gameengineservice.service.impl.MatchService_Test;
+import com.mohan.gameengineservice.websocket.services.CricketMatchV3Util;
+import com.mohan.gameengineservice.websocket.CricketMatchSimulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,7 +31,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/tournaments")
-@CrossOrigin("http://localhost:3000/")
+@CrossOrigin("http://localhost:5173/")
 public class TournamentController {
 
 
@@ -33,7 +41,15 @@ public class TournamentController {
     TournamentService tournamentService;
     MatchSchedulingService matchSchedulingService;
 
+
     CricketMatchRepository cricketMatchRepository;
+
+    @Autowired
+    CricketMatchV3Util cricketMatchV3Util;
+
+    @Autowired
+    private MatchService_Test matchServiceTest;
+
 
     public TournamentController(TournamentService tournamentService, MatchSchedulingService matchSchedulingService) {
         this.tournamentService = tournamentService;
@@ -70,6 +86,7 @@ public class TournamentController {
     // registering or signup  the team into tournament with the particular id
     @PostMapping("/{tournamentId}/register")
     public ResponseEntity<?> registerTeamByTournamentID (@PathVariable Long tournamentId, @RequestBody TeamRegistrationDTO teamRegistrationDTO) {
+        System.out.println("testing");
         try {
             String result = tournamentService.registerTeamByTournamentID(tournamentId, teamRegistrationDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
@@ -112,8 +129,8 @@ public class TournamentController {
 
 
 
-    // this is for the schedule api after registering the 6 team then it need to hit this api
-    @PostMapping("/{tournamentId}/schedule")
+    // this is for the schedule api after successfully  registered the 6 team then it need to hit this api
+    @PostMapping("/{tournamentId}/schedule/group-stages")
     public ResponseEntity<?> scheduleRoundRobin(@PathVariable Long tournamentId) {
         try {
             List<MatchDetailsDTO> matchDetails = matchSchedulingService.scheduleGroupStageMatches(tournamentId);
@@ -126,12 +143,14 @@ public class TournamentController {
 
 
     // after scheduling the match it will give the list of play-offs, semifinals, final
-    @GetMapping("/{tournamentId}/matches")
+    /// it is well working for the group stage matches
+    @GetMapping("/{tournamentId}/matches/group-stages")
     public ResponseEntity<?> getMatchesByTournamentId(@PathVariable Long tournamentId) {
         logger.info("Fetching matches for tournament ID: {}", tournamentId);
 
         try {
-            Map<String, List<CricketMatch>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
+            // Call the service method that returns DTOs
+            Map<String, List<MatchDetailsDTO>> matches = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
             return ResponseEntity.ok(matches);
         } catch (Exception e) {
             // Log the exception and return an appropriate response
@@ -140,12 +159,50 @@ public class TournamentController {
         }
     }
 
+    /// get tournament  by id only
+    @GetMapping("/get-tournament/{id}")
+    public ResponseEntity<TournamentDTO> getTournamentById(@PathVariable Long id) {
+        TournamentDTO tournamentDTO = tournamentService.getTournamentById(id);
+        return ResponseEntity.ok(tournamentDTO);
+
+    }
+
+    /// this is for the testing
+    @PostMapping("/start/{matchId}")
+    public String startMatch(@PathVariable Long matchId) {
+        matchServiceTest.startMatch(matchId);
+        return "Match simulation started for matchId " + matchId;
+    }
+
+
+    @PostMapping("/simulate")
+    public String simulateMatch(@RequestBody MatchDetailsDTO matchDetailsDTO) {
+//        matchSimulationService.simulateMatch(matchDetailsDTO);
+        try {
+//            cricketMatchSimulation.simulateMatchFromDTO(matchDetailsDTO);
+            cricketMatchV3Util.simulateMatchFromDTO(matchDetailsDTO);
 
 
     @GetMapping("/matches/{matchId}")
     public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
         try {
             CricketMatch match = tournamentService.getCricketMatchById(matchId);
+=======
+//            matchSimulationService.simulateMatch(matchDetailsDTO);
+            return "Match simulation completed";
+        } catch (InterruptedException e) {
+            return "Error during simulation: " + e.getMessage();
+        }
+    }
+
+    /*
+    *   this is get the match details by the match ID  later i need to convert to the MatchDetails Dto so i can use this to get the simulate match
+    */
+    @GetMapping("/matches/{matchId}")
+    public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
+        try {
+            MatchDetailsDTO match = tournamentService.getCricketMatchById(matchId);
+
             if (match != null) {
                 return ResponseEntity.ok(match);
             } else {
@@ -158,6 +215,7 @@ public class TournamentController {
                     .body("An error occurred while retrieving the match: " + e.getMessage());
         }
     }
+
 
     @PutMapping("/matches/{id}")
     public ResponseEntity<?> updateMatch(@PathVariable Long id,

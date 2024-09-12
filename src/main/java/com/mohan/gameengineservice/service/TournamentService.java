@@ -1,12 +1,14 @@
 package com.mohan.gameengineservice.service;
 
-import com.fasterxml.jackson.databind.deser.DataFormatReaders;
+
 import com.mohan.gameengineservice.dto.MatchDetailsDTO;
 import com.mohan.gameengineservice.dto.TeamRegistrationDTO;
 import com.mohan.gameengineservice.dto.TeamSummaryDTO;
 import com.mohan.gameengineservice.dto.TournamentDTO;
 import com.mohan.gameengineservice.entity.CricketMatch;
+
 import com.mohan.gameengineservice.entity.Location;
+
 import com.mohan.gameengineservice.entity.Tournament;
 
 import java.time.LocalDateTime;
@@ -29,4 +31,8 @@ public interface TournamentService {
 
      List<MatchDetailsDTO> getAllMatches();
 
+
+  List<MatchDetailsDTO> scheduleRoundRobinMatches(Long tournamentId);
+
+    MatchDetailsDTO getCricketMatchById(Long matchId);
 }

@@ -25,4 +25,12 @@ public class Over {
     @ManyToOne
     @JoinColumn(name = "innings_id")
     private Innings innings; // This field should match the mappedBy in Innings
+
+    public Object getBallsInOver() {
+        return 7;
+    }
+
+    public void setBallsInOver(int i) {
+
+    }
 }
