@@ -27,4 +27,6 @@ public interface TournamentService {
 
     String  updateCricketMatch(Long matchId, LocalDateTime newDateTime , Location Update);
 
+     List<MatchDetailsDTO> getAllMatches();
+
 }

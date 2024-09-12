@@ -113,7 +113,6 @@ public class TournamentServiceImpl implements TournamentService {
         cricketMatchRepository.save(existingMatch);
 
         return "Match with ID: " + matchId + " has been successfully rescheduled.";
-
     }
 
 
@@ -332,6 +331,36 @@ public class TournamentServiceImpl implements TournamentService {
         long groupBCount = teamRegistrationRepository.countByTournamentIdAndGroupType(tournamentId, "Group B");
 
         return groupACount <= groupBCount ? "Group A" : "Group B";
+    }
+
+   public List<MatchDetailsDTO> getAllMatches(){
+        List<CricketMatch> matchDetails = cricketMatchRepository.findAll();
+        return convertToMatchDetailsDTOList(matchDetails);
+   }
+
+
+   public MatchDetailsDTO convertToMatchDetailsDTO(CricketMatch matchDetails) {
+        MatchDetailsDTO matchDetailsDTO = new MatchDetailsDTO();
+        matchDetailsDTO.setMatchId(matchDetails.getId());
+        matchDetailsDTO.setMatchType(matchDetails.getMatchType());
+        matchDetailsDTO.setMatchGroup(matchDetails.getMatchGroup());
+        matchDetailsDTO.setLocation(String.valueOf(matchDetails.getLocation()));
+        matchDetailsDTO.setMatchDateTime(matchDetails.getMatchDateTime());
+        matchDetailsDTO.setTeamB(String.valueOf(matchDetails.getTeamB()));
+        matchDetailsDTO.setTeamA(String.valueOf(matchDetails.getTeamA()));
+        matchDetailsDTO.setLive(matchDetails.isLive());
+        return matchDetailsDTO;
+
+   }
+
+
+    private List<MatchDetailsDTO> convertToMatchDetailsDTOList(List<CricketMatch> matchDetails) {
+        List<MatchDetailsDTO> matchDetailsDTOList = new ArrayList<>();
+        for (CricketMatch match : matchDetails) {
+            MatchDetailsDTO dto = convertToMatchDetailsDTO(match);
+            matchDetailsDTOList.add(dto);
+        }
+        return matchDetailsDTOList;
     }
 
 
