@@ -1,12 +1,17 @@
 package com.mohan.gameengineservice.service;
 
+
 import com.mohan.gameengineservice.dto.MatchDetailsDTO;
 import com.mohan.gameengineservice.dto.TeamRegistrationDTO;
 import com.mohan.gameengineservice.dto.TeamSummaryDTO;
 import com.mohan.gameengineservice.dto.TournamentDTO;
 import com.mohan.gameengineservice.entity.CricketMatch;
+
+import com.mohan.gameengineservice.entity.Location;
+
 import com.mohan.gameengineservice.entity.Tournament;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TournamentService {
@@ -19,6 +24,13 @@ public interface TournamentService {
     List<TeamSummaryDTO> getRegisteredTeams(Long tournamentId);
 
     TournamentDTO getTournamentById(Long tournamentId);
+
+    CricketMatch getCricketMatchById(Long matchId);
+
+    String  updateCricketMatch(Long matchId, LocalDateTime newDateTime , Location Update);
+
+     List<MatchDetailsDTO> getAllMatches();
+
 
   List<MatchDetailsDTO> scheduleRoundRobinMatches(Long tournamentId);
 

@@ -3,9 +3,14 @@ package com.mohan.gameengineservice.controller;
 
 import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.CricketMatch;
+import com.mohan.gameengineservice.entity.Location;
 import com.mohan.gameengineservice.entity.Tournament;
 import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.exceptions.TeamNotFoundException;
+
+import com.mohan.gameengineservice.repository.CricketMatchRepository;
+import com.mohan.gameengineservice.service.TournamentService;
+import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
 import com.mohan.gameengineservice.service.TournamentService;
 import com.mohan.gameengineservice.service.impl.MatchSchedulingService;
 import com.mohan.gameengineservice.service.impl.MatchService;
@@ -15,11 +20,12 @@ import com.mohan.gameengineservice.websocket.services.CricketMatchV3Util;
 import com.mohan.gameengineservice.websocket.CricketMatchSimulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,10 +38,11 @@ public class TournamentController {
 
     private static final Logger logger = LoggerFactory.getLogger(TournamentController.class);
 
-
-
     TournamentService tournamentService;
     MatchSchedulingService matchSchedulingService;
+
+
+    CricketMatchRepository cricketMatchRepository;
 
     @Autowired
     CricketMatchV3Util cricketMatchV3Util;
@@ -66,6 +73,13 @@ public class TournamentController {
     @GetMapping("/get-all-tournaments")
     public ResponseEntity<List<TournamentDTO>> getAllTournamentsCreatedAdmin() {
             return ResponseEntity.ok(tournamentService.getAllTournaments());
+    }
+
+    @GetMapping("/tournament/{id}")
+    public ResponseEntity<TournamentDTO> getTournamentById(@PathVariable Long id) {
+        TournamentDTO tournamentDTO = tournamentService.getTournamentById(id);
+        return ResponseEntity.ok(tournamentDTO);
+
     }
 
 
@@ -168,6 +182,12 @@ public class TournamentController {
 //            cricketMatchSimulation.simulateMatchFromDTO(matchDetailsDTO);
             cricketMatchV3Util.simulateMatchFromDTO(matchDetailsDTO);
 
+
+    @GetMapping("/matches/{matchId}")
+    public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
+        try {
+            CricketMatch match = tournamentService.getCricketMatchById(matchId);
+=======
 //            matchSimulationService.simulateMatch(matchDetailsDTO);
             return "Match simulation completed";
         } catch (InterruptedException e) {
@@ -182,6 +202,7 @@ public class TournamentController {
     public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
         try {
             MatchDetailsDTO match = tournamentService.getCricketMatchById(matchId);
+
             if (match != null) {
                 return ResponseEntity.ok(match);
             } else {
@@ -196,4 +217,33 @@ public class TournamentController {
     }
 
 
+    @PutMapping("/matches/{id}")
+    public ResponseEntity<?> updateMatch(@PathVariable Long id,
+                                         @RequestParam(required = false) LocalDateTime newDateTime,
+                                         @RequestParam(required = false) Location newLocation) {
+        try {
+            String result = tournamentService.updateCricketMatch(id, newDateTime, newLocation);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Match not found with ID: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating match: " + e.getMessage());
+        }
+
+    }
+
+    @GetMapping("/all-matches")
+    public List<MatchDetailsDTO> getAllMatches() {
+        try {
+            return tournamentService.getAllMatches();
+        } catch (ResourceNotFoundException e) {
+            System.out.println("No matches found: " + e.getMessage());
+            return Collections.emptyList();
+        } catch (Exception e) {
+            System.out.println("An error occurred while retrieving match details: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
 }
+

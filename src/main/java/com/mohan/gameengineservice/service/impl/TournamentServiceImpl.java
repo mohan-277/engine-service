@@ -4,6 +4,7 @@ import com.mohan.gameengineservice.dto.*;
 import com.mohan.gameengineservice.entity.*;
 import com.mohan.gameengineservice.entity.constants.MatchStage;
 import com.mohan.gameengineservice.entity.constants.TournamentStatus;
+import com.mohan.gameengineservice.exceptions.ResourceNotFoundException;
 import com.mohan.gameengineservice.repository.*;
 import com.mohan.gameengineservice.service.TournamentService;
 import jakarta.transaction.Transactional;
@@ -90,6 +91,30 @@ public class TournamentServiceImpl implements TournamentService {
                             })
                             .collect(Collectors.toList());
     }
+
+    @Override
+    public TournamentDTO getTournamentById(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId).get();
+        return convertToDto(tournament);
+    }
+
+    @Override
+    public CricketMatch getCricketMatchById(Long matchId) {
+        return cricketMatchRepository.findById(matchId).get();
+    }
+
+    public String updateCricketMatch(Long matchId, LocalDateTime newDateTime, Location newLocation) {
+        CricketMatch existingMatch = cricketMatchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match with ID: " + matchId + " does not exist."));
+
+            existingMatch.setMatchDateTime(newDateTime);
+            existingMatch.setLocation(newLocation);
+
+        cricketMatchRepository.save(existingMatch);
+
+        return "Match with ID: " + matchId + " has been successfully rescheduled.";
+    }
+
 
 //    public List<TeamSummary> getRegisteredTeams(Long tournamentId) {
 //        // Retrieve team summaries using the projection interface
@@ -311,6 +336,36 @@ public class TournamentServiceImpl implements TournamentService {
         return groupACount <= groupBCount ? "Group A" : "Group B";
     }
 
+
+   public List<MatchDetailsDTO> getAllMatches(){
+        List<CricketMatch> matchDetails = cricketMatchRepository.findAll();
+        return convertToMatchDetailsDTOList(matchDetails);
+   }
+
+
+   public MatchDetailsDTO convertToMatchDetailsDTO(CricketMatch matchDetails) {
+        MatchDetailsDTO matchDetailsDTO = new MatchDetailsDTO();
+        matchDetailsDTO.setMatchId(matchDetails.getId());
+        matchDetailsDTO.setMatchType(matchDetails.getMatchType());
+        matchDetailsDTO.setMatchGroup(matchDetails.getMatchGroup());
+        matchDetailsDTO.setLocation(String.valueOf(matchDetails.getLocation()));
+        matchDetailsDTO.setMatchDateTime(matchDetails.getMatchDateTime());
+        matchDetailsDTO.setTeamB(String.valueOf(matchDetails.getTeamB()));
+        matchDetailsDTO.setTeamA(String.valueOf(matchDetails.getTeamA()));
+        matchDetailsDTO.setLive(matchDetails.isLive());
+        return matchDetailsDTO;
+
+   }
+
+
+    private List<MatchDetailsDTO> convertToMatchDetailsDTOList(List<CricketMatch> matchDetails) {
+        List<MatchDetailsDTO> matchDetailsDTOList = new ArrayList<>();
+        for (CricketMatch match : matchDetails) {
+            MatchDetailsDTO dto = convertToMatchDetailsDTO(match);
+            matchDetailsDTOList.add(dto);
+        }
+        return matchDetailsDTOList;
+
     public TournamentDTO getTournamentById(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId).get();
         return convertToDto(tournament);
@@ -334,6 +389,7 @@ public class TournamentServiceImpl implements TournamentService {
         matchDetailsDTO.setMatchDateTime(cricketMatch.getMatchDateTime());
         matchDetailsDTO.setLive(cricketMatch.isLive());
         return matchDetailsDTO;
+
     }
 
 
