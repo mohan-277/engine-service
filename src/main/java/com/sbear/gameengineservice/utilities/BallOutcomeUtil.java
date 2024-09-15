@@ -11,7 +11,8 @@ public class BallOutcomeUtil {
     private final PlayerObject bowler; // The bowler who delivered the ball
     private final boolean isNoBall;
     private final BallTypeUtil ballTypeUtil;
-    // Constructor
+
+
     public BallOutcomeUtil(int runs, boolean isWicket, WicketTypeUtil wicketTypeUtil, PlayerObject bowler, BallTypeUtil ballTypeUtil) {
         this.runs = runs;
         this.isWicket = isWicket;

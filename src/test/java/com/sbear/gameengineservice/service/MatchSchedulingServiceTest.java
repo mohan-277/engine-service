@@ -1,34 +1,29 @@
 package com.sbear.gameengineservice.service;
 
+
 import com.sbear.gameengineservice.dto.MatchDetailsDTO;
-
-import com.sbear.gameengineservice.entity.CricketMatch;
-import com.sbear.gameengineservice.entity.Location;
-import com.sbear.gameengineservice.entity.Team;
-import com.sbear.gameengineservice.entity.constants.TournamentStatus;
-
-import com.sbear.gameengineservice.repository.CricketMatchRepository;
-import com.sbear.gameengineservice.repository.LocationRepository;
-import com.sbear.gameengineservice.repository.TeamRegistrationRepository;
-import com.sbear.gameengineservice.repository.TournamentRepository;
+import com.sbear.gameengineservice.entity.*;
+import com.sbear.gameengineservice.entity.constants.MatchConstants;
+import com.sbear.gameengineservice.entity.stats.TeamStats;
+import com.sbear.gameengineservice.repository.*;
+import com.sbear.gameengineservice.repository.stats.TeamStatsRepository;
 import com.sbear.gameengineservice.service.impl.MatchSchedulingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import java.lang.reflect.Method;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
 public class MatchSchedulingServiceTest {
-
-    @InjectMocks
-    private MatchSchedulingService matchSchedulingService;
 
     @Mock
     private CricketMatchRepository cricketMatchRepository;
@@ -42,86 +37,120 @@ public class MatchSchedulingServiceTest {
     @Mock
     private LocationRepository locationRepository;
 
+    @Mock
+    private TeamStatsRepository teamStatsRepository;
+
+    @Mock
+    private TeamRepository teamRepository;
+
+    @InjectMocks
+    private MatchSchedulingService matchSchedulingService;
+
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testGetMatchesByTypeAndGroup() {
-        // Arrange
+    public void testGetMatchesByTypeAndGroup() {
         Long tournamentId = 1L;
-        List<CricketMatch> mockMatches = new ArrayList<>();
+        CricketMatch match1 = new CricketMatch();
+        match1.setMatchGroup("Group A");
+        CricketMatch match2 = new CricketMatch();
+        match2.setMatchGroup("Group B");
 
-        // Add mock data to the list
-        CricketMatch match = new CricketMatch();
-        match.setId(1L);
-        Team teamA = new Team();
-        teamA.setName("Team A");
-        match.setTeamA(teamA);
-        Team teamB = new Team();
-        teamB.setName("Team B");
-        match.setTeamB(teamB);
-        Location location = new Location();
-        location.setCountry("Country");
-        location.setGround("Ground");
-        match.setLocation(location);
-        match.setMatchType("T20");
-        match.setMatchStage("Group Stage");
-        match.setMatchGroup("Group A");
-        match.setMatchDateTime(LocalDateTime.of(2024, 9, 15, 14, 0));
+        when(cricketMatchRepository.findMatchesByTournamentId(tournamentId))
+                .thenReturn(Arrays.asList(match1, match2));
 
-        mockMatches.add(match);
-        when(cricketMatchRepository.findMatchesByTournamentId(tournamentId)).thenReturn(mockMatches);
+        Map<String, List<MatchDetailsDTO>> result = matchSchedulingService.getMatchesByTypeAndGroup(tournamentId);
 
-
+        assertNotNull(result);
+        assertEquals(1, result.get("Group A").size());
+        assertEquals(1, result.get("Group B").size());
     }
 
+    @Test
+    public void testScheduleGroupStageMatches() {
+        Long tournamentId = 1L;
+        Tournament tournament = new Tournament();
+        tournament.setStartDate(LocalDateTime.now());
+        tournament.setMatchInterval(Duration.ofDays(1));
+
+        when(tournamentRepository.findById(tournamentId)).thenReturn(Optional.of(tournament));
+        when(cricketMatchRepository.existsByTournamentIdAndMatchStage(tournamentId, "PLAYOFF")).thenReturn(false);
+
+        List<TeamRegistration> groupARegistrations = new ArrayList<>();
+        List<TeamRegistration> groupBRegistrations = new ArrayList<>();
+        when(teamRegistrationRepository.findTeamRegistrationByTournamentIdAndGroupType(tournamentId, "Group A"))
+                .thenReturn(groupARegistrations);
+        when(teamRegistrationRepository.findTeamRegistrationByTournamentIdAndGroupType(tournamentId, "Group B"))
+                .thenReturn(groupBRegistrations);
+
+        List<Location> allLocations = new ArrayList<>();
+        when(locationRepository.findAll()).thenReturn(allLocations);
+
+        assertThrows(RuntimeException.class, () -> matchSchedulingService.scheduleGroupStageMatches(tournamentId));
+
+        // Add more test scenarios as needed
+    }
 
     @Test
-    void testConvertToMatchDetailsDTOWithReflection() throws Exception {
-        // Arrange
-        MatchSchedulingService service = new MatchSchedulingService();
-        CricketMatch match = new CricketMatch();
-        match.setId(1L);
+    public void testScheduleSemiFinals_GroupStageNotCompleted() {
+        Long tournamentId = 1L;
+        Tournament tournament = new Tournament();
+        tournament.setTournamentName("Test Tournament");
 
-        // Initialize mock objects
-        Team teamA = new Team();
-        teamA.setName("Team A");
-        match.setTeamA(teamA);
+        // Mocking repository responses
+        when(tournamentRepository.findById(tournamentId)).thenReturn(Optional.of(tournament));
+        when(cricketMatchRepository.existsByTournamentIdAndMatchStage(tournamentId, "Knock out Stages")).thenReturn(false);
 
-        Team teamB = new Team();
-        teamB.setName("Team B");
-        match.setTeamB(teamB);
+        // Simulate group stage matches not completed
+        long groupStageMatchesCount = 1; // Simulate some group stage matches still planned
+        when(cricketMatchRepository.countByTournamentIdAndMatchStageAndMatchStatus(tournamentId, MatchConstants.PLAY_OFF, MatchConstants.PLANNED))
+                .thenReturn(groupStageMatchesCount);
 
-        Location location = new Location();
-        location.setCountry("Country");
-        location.setGround("Ground");
-        match.setLocation(location);
+        // Test should throw RuntimeException
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> matchSchedulingService.scheduleSemiFinals(tournamentId));
+        assertEquals("Group stage matches are not yet completed.", thrown.getMessage());
+    }
 
-        match.setMatchType("T20");
-        match.setMatchStage("Group Stage");
-        match.setMatchGroup("Group A");
-        match.setMatchDateTime(LocalDateTime.of(2024, 9, 15, 14, 0));
+    @Test
+    public void testScheduleSemiFinals_EmptyStats() {
+        Long tournamentId = 1L;
+        Tournament tournament = new Tournament();
+        tournament.setTournamentName("Test Tournament");
 
-        // Access private method using reflection
-        Method method = MatchSchedulingService.class.getDeclaredMethod("convertToMatchDetailsDTO", CricketMatch.class);
-        method.setAccessible(true);
+        // Mocking repository responses
+        when(tournamentRepository.findById(tournamentId)).thenReturn(Optional.of(tournament));
+        when(cricketMatchRepository.existsByTournamentIdAndMatchStage(tournamentId, "Knock out Stages")).thenReturn(false);
 
-        // Act
-        MatchDetailsDTO matchDetail = (MatchDetailsDTO) method.invoke(service, match);
+        // Simulate group stage matches completed
+        long groupStageMatchesCount = 0; // Assume all group stage matches are completed
+        when(cricketMatchRepository.countByTournamentIdAndMatchStageAndMatchStatus(tournamentId, MatchConstants.PLAY_OFF, MatchConstants.PLANNED))
+                .thenReturn(groupStageMatchesCount);
 
-        // Assert
-        assertNotNull(matchDetail);
-        assertEquals(1L, matchDetail.getMatchId());
-        assertEquals("Team A", matchDetail.getTeamA());
-        assertEquals("Team B", matchDetail.getTeamB());
-        assertEquals(LocalDateTime.of(2024, 9, 15, 14, 0), matchDetail.getMatchDateTime());
-        assertEquals("Country - Ground", matchDetail.getLocation());
-        assertEquals("T20", matchDetail.getMatchType());
-        assertEquals("Group Stage", matchDetail.getMatchStage());
-        assertEquals(TournamentStatus.PLANNED.name(), matchDetail.getMatchStatus());
-        assertEquals("Group A", matchDetail.getMatchGroup());
+        // Simulate empty stats for groups
+        when(teamStatsRepository.findTeamStatsByMatchGroup("Group A")).thenReturn(Collections.emptyList());
+        when(teamStatsRepository.findTeamStatsByMatchGroup("Group B")).thenReturn(Collections.emptyList());
+
+        // Test should throw RuntimeException
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> matchSchedulingService.scheduleSemiFinals(tournamentId));
+        assertEquals("Not enough teams to schedule semi-finals.", thrown.getMessage());
+    }
+
+    @Test
+    public void testGetFinalScheduleMatches_NoTeams() {
+        Long tournamentId = 1L;
+        // No teams available for the final
+        List<TeamStats> topTeams = Collections.emptyList();
+        when(teamStatsRepository.findTop2TeamsByMatchGroupAndPoints("Knock out Stages")).thenReturn(topTeams);
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> {
+            matchSchedulingService.getFinalScheduleMatches(tournamentId);
+        });
+
+        assertEquals("Not enough teams to schedule the final match. Knock-out stages might not be completed.", thrown.getMessage());
     }
 
 }
+

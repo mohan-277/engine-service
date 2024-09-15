@@ -10,15 +10,11 @@ import java.util.List;
 
 @Repository
 public interface TeamStatsRepository extends JpaRepository<TeamStats, Integer> {
-    TeamStats findByTeamName(String teamName);
 
 
     TeamStats findTeamStatsByMatchIdAndTeamName(Long matchId, String teamName);
 
     List<TeamStats> findTeamStatsByMatchId(Long matchId);
-
-    @Query("SELECT SUM(ps.points) FROM TeamStats ps WHERE ps.teamName = :teamName")
-    Integer findTotalPointsByTeamName(@Param("teamName") String teamName);
 
     @Query(value = "SELECT t FROM TeamStats t WHERE t.matchGroup = :matchGroup" )
     List<TeamStats> findTeamStatsByMatchGroup(@Param("matchGroup") String matchGroup);

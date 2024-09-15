@@ -5,8 +5,7 @@ import com.sbear.gameengineservice.entity.Team;
 import lombok.*;
 
 
-@Setter
-@Getter
+@Data
 @Builder
 public class InningRequest {
     private Team battingTeam;

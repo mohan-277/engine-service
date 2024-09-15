@@ -1,22 +1,41 @@
 package com.sbear.gameengineservice.service.impl;
 
+import com.sbear.gameengineservice.dto.PlayerDTO;
 import com.sbear.gameengineservice.dto.PlayerScoreCardDTO;
+import com.sbear.gameengineservice.entity.Player;
 import com.sbear.gameengineservice.entity.stats.PlayerStats;
+import com.sbear.gameengineservice.exceptions.PlayerNotFoundException;
+import com.sbear.gameengineservice.exceptions.ResourceNotFoundException;
 import com.sbear.gameengineservice.repository.PlayerRepository;
 import com.sbear.gameengineservice.repository.stats.PlayerStatsRepository;
 import com.sbear.gameengineservice.service.PlayerService;
+import com.sbear.gameengineservice.mappers.PlayerMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlayerServiceImpl implements PlayerService {
 
 
     private final PlayerStatsRepository playerStatsRepository;
+
+    private final PlayerRepository playerRepository;
+
+
+
     public PlayerServiceImpl(PlayerRepository playerRepository, PlayerStatsRepository playerStatsRepository) {
         this.playerStatsRepository = playerStatsRepository;
+        this.playerRepository = playerRepository;
+
     }
+
+
     public PlayerScoreCardDTO getPlayerScoreCard(String playerName) {
         List<PlayerStats> statsList = playerStatsRepository.findByPlayerName(playerName);
 
@@ -46,4 +65,50 @@ public class PlayerServiceImpl implements PlayerService {
                 totalOversBowled, totalWicketsTaken
         );
     }
+
+
+
+    public Player registerPlayer(PlayerDTO playerDTO) throws DateTimeParseException {
+        LocalDate dateOfBirth = LocalDate.parse(playerDTO.getDateOfBirth());
+        Player player = Player.builder()
+                .name(playerDTO.getName())
+                .country(playerDTO.getCountry())
+                .dateOfBirth(dateOfBirth)
+                .gender(playerDTO.getGender())
+                .specialization(playerDTO.getSpecialization())
+                .build();
+        return playerRepository.save(player);
+    }
+
+    public PlayerDTO getPlayerById(Long id) throws PlayerNotFoundException{
+        Player player = playerRepository.findById(id)
+                .orElseThrow(() -> new PlayerNotFoundException(Long.toString(id)));
+        return PlayerMapper.toDTO(player);
+    }
+
+
+   public List<PlayerDTO> getAllPlayersByCountry(String country){
+       List<Player> players = playerRepository.findAllByCountry(country);
+       if (players.isEmpty()) {
+           throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No players found for country: " + country);
+       }
+       return players.stream()
+               .map(PlayerMapper::toDTO)
+               .collect(Collectors.toList());
+   }
+
+    public List<PlayerDTO> getAllPlayers(){
+        List<Player> players = playerRepository.findAll();
+        if (players.isEmpty()) {
+            throw new ResourceNotFoundException("No players found");
+        }
+        return players.stream()
+                .map(PlayerMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getAllPlayersCountry(){
+        return playerRepository.findDistinctCountries();
+    }
+
 }

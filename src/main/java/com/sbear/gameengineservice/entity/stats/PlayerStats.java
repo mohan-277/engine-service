@@ -47,5 +47,21 @@ public class PlayerStats {
     @Column(name = "current_playing_match_id")
     private Long currentPlayingMatchId; // this is for the differentiating/ retrieving the individual scoring for the player
 
+    public PlayerStats( String playerName, String teamName, String playerType, long id ,int runs, int ballsFaced, int fours, int sixes, int dotBalls, int singles, int twos, int threes, int oversBowled) {
+        this.id = id;
+        this.playerName = playerName;
+        this.teamName = teamName;
+        this.playerType = playerType;
+        this.runs = runs;
+        this.ballsFaced = ballsFaced;
+        this.fours = fours;
+        this.sixes = sixes;
+        this.dotBalls = dotBalls;
+        this.singles = singles;
+        this.twos = twos;
+        this.threes = threes;
+        this.oversBowled = oversBowled;
+    }
+
 
 }

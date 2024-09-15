@@ -3,11 +3,10 @@ package com.sbear.gameengineservice.dto;
 import lombok.*;
 
 
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
-@Getter
-@Builder
 public class PlayerDTO {
     private Long id;
     private String name;
@@ -24,5 +23,14 @@ public class PlayerDTO {
 
     public PlayerDTO(long id) {
         this.id = id;
+    }
+
+    public PlayerDTO(String name, String specialization, String date, String gender, String country) {
+        this.name = name;
+        this.dateOfBirth = date;
+        this.specialization = specialization;
+        this.gender = gender;
+        this.country = country;
+
     }
 }

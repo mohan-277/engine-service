@@ -44,7 +44,7 @@ public class Ball {
     @Column(name = "wicket_type")
     private WicketType wicketType;
 
-    private Integer totalScore; // This is for calculation purposes, not persisted
+    private Integer totalScore;
 
     private Integer wicketCount;
 
@@ -60,34 +60,6 @@ public class Ball {
     @JoinColumn(name = "innings_id")
     private Innings innings;
 
-//    @OneToOne
-//    private  PlayerObject playedBy;
-//    @OneToOne
-//    private  PlayerObject bowledBy;
-//    @ManyToOne
-//    private Over over;
 
-    public static void main(String[] args) {
-        Over over = new Over();
-        List<Ball>  balls = new ArrayList<>(6);
-        Ball ball = new Ball();
-        ball.ballType= BallType.WIDE;
-//        ball.runs = 1;
-        ball.wicket = new Wicket();
-        balls.add(ball);
-        over.setBalls(balls);
-        System.out.println(over);
-    }
-
-    public void setPlayer(Player bowler) {
-
-    }
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 }
 

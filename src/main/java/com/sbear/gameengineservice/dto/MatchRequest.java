@@ -6,13 +6,10 @@ import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
-@Getter
+@Data
 @Builder
-@ToString
 public class MatchRequest {
 
-    // this is the way to request the team i think and easy way instead  of send the large json with id i need to query the team
     private String stadiumName;
     private String matchType; // e.g., "T20", "ODI", "Test"
     private LocalDateTime matchStartTime;

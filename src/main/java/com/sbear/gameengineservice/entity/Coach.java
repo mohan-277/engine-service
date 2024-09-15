@@ -23,17 +23,4 @@ public class Coach {
     private String username;
     private String password;
 
-//    @ManyToOne
-//    @JoinColumn(name = "team_id")
-//    private Team team;
-
-//    @OneToMany
-//    @JoinTable(
-//            name = "coach_tournament_registration",
-//            joinColumns = @JoinColumn(name = "coach_id"),
-//            inverseJoinColumns = @JoinColumn(name = "tournament_id")
-//    )
-//    private List<Tournament> tournaments = new ArrayList<>();
-
-
 }

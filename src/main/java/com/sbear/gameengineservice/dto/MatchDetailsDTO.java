@@ -4,11 +4,12 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@Setter
-@Getter
-@NoArgsConstructor
+
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class MatchDetailsDTO {
 
 

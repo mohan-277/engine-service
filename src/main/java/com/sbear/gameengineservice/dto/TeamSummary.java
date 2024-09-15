@@ -1,7 +1,9 @@
 package com.sbear.gameengineservice.dto;
 
 
-public interface TeamSummary {   // this for the data collecting from the jpa easy way
+
+
+public interface TeamSummary {
     Integer getTeamID();
     Long getCoachId();
     String getName();

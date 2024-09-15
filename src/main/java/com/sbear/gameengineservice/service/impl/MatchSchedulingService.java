@@ -9,10 +9,7 @@ import com.sbear.gameengineservice.entity.stats.TeamStats;
 
 import com.sbear.gameengineservice.repository.*;
 import com.sbear.gameengineservice.repository.stats.TeamStatsRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -24,26 +21,36 @@ import java.util.stream.Collectors;
 public class MatchSchedulingService {
 
 
-    @Autowired
-    private CricketMatchRepository cricketMatchRepository;
+ 
+    private final CricketMatchRepository cricketMatchRepository;
 
-    @Autowired
-    private TeamRegistrationRepository teamRegistrationRepository;
+    private final TeamRegistrationRepository teamRegistrationRepository;
+ 
+    private final TournamentRepository tournamentRepository;
 
-    @Autowired
-    private TournamentRepository tournamentRepository;
+    private final LocationRepository locationRepository;
+ 
+    private final TeamStatsRepository teamStatsRepository;
+ 
+    private final TeamRepository teamRepository;
 
-    @Autowired
-    private LocationRepository locationRepository;
-    @Autowired
-    private TeamStatsRepository teamStatsRepository;
-    @Autowired
-    private TeamRepository teamRepository;
+    public MatchSchedulingService(CricketMatchRepository cricketMatchRepository, TeamRegistrationRepository teamRegistrationRepository, TournamentRepository tournamentRepository, LocationRepository locationRepository, TeamStatsRepository teamStatsRepository, TeamRepository teamRepository) {
+        this.cricketMatchRepository = cricketMatchRepository;
+        this.teamRegistrationRepository = teamRegistrationRepository;
+        this.tournamentRepository = tournamentRepository;
+        this.locationRepository = locationRepository;
+        this.teamStatsRepository = teamStatsRepository;
+        this.teamRepository = teamRepository;
+    }
 
 
+    /**
+     * Retrieves all scheduled matches, organized by teams from Group A and Group B.
+     * Returns a list of matches divided based on the teams' group affiliations.
+     */
 
     public Map<String, List<MatchDetailsDTO>> getMatchesByTypeAndGroup(Long tournamentId) {
-        // Assuming you have a method to get matches by tournament ID
+        // get all the matches
         List<CricketMatch> allMatches = cricketMatchRepository.findMatchesByTournamentId(tournamentId);
 
         // Filter and convert matches based on type and group
@@ -64,28 +71,32 @@ public class MatchSchedulingService {
     }
 
     private MatchDetailsDTO convertToMatchDetailsDTO(CricketMatch match) {
-        MatchDetailsDTO matchDetail = new MatchDetailsDTO();
-        matchDetail.setMatchId(match.getId());
-        matchDetail.setTeamA(match.getTeamA().getName());
-        matchDetail.setTeamB(match.getTeamB().getName());
-        matchDetail.setMatchDateTime(match.getMatchDateTime());
-        matchDetail.setLocation(match.getLocation().getCountry() + " - " + match.getLocation().getGround());
-        matchDetail.setMatchType(String.valueOf(match.getMatchType())); // t20 , ODI , test , IPL
-
-        // Set the match stage (e.g., Playoffs, Semifinals, Finals)
-        matchDetail.setMatchStage(match.getMatchStage());
-//        matchDetail.setMatchStatus("TournamentStatus.PLANNED.name()"); // this planned
-        matchDetail.setMatchStatus(match.getMatchStatus());
-        matchDetail.setMatchGroup(match.getMatchGroup()); // group A or group B
-        return matchDetail;
+        if (match == null) {
+            throw new IllegalArgumentException("Match cannot be null");
+        }
+        return MatchDetailsDTO.builder()
+                .matchId(match.getId())
+                .teamA(match.getTeamA() != null ? match.getTeamA().getName() : "Unknown")
+                .teamB(match.getTeamB() != null ? match.getTeamB().getName() : "Unknown")
+                .matchDateTime(LocalDateTime.parse(match.getMatchDateTime() != null ? match.getMatchDateTime().toString() : "Not Specified"))
+                .location(match.getLocation() != null ?
+                        (match.getLocation().getCountry() != null ?
+                                match.getLocation().getCountry() + " - " + (match.getLocation().getGround() != null ? match.getLocation().getGround() : "Unknown Ground") :
+                                "Location Unknown") :
+                        "Location Unknown")
+                .matchType(match.getMatchType() != null ? match.getMatchType() : "Not Specified")
+                .matchStage(match.getMatchStage() != null ? match.getMatchStage() : "Not Specified")
+                .matchStatus(match.getMatchStatus() != null ? match.getMatchStatus() : "Not Specified")
+                .matchGroup(match.getMatchGroup() != null ? match.getMatchGroup() : "Not Specified")
+                .build();
     }
 
-    /**
-     * this is for the scheduling Group stage matches by the groupA and groupB and it will save it in the DB
-     *
-     *
-     */
 
+
+    /**
+     * Schedules and saves group stage matches between teams from Group A and Group B into the database.
+     * Ensures all teams in each group play against teams from the other group.
+     */
 
     @Transactional
     public List<MatchDetailsDTO> scheduleGroupStageMatches(Long tournamentId) {
@@ -123,13 +134,13 @@ public class MatchSchedulingService {
         List<MatchDetailsDTO> matchDetails = new ArrayList<>();
 
         // Schedule matches for Group A
-        matchDetails.addAll(scheduleMatchesForGroup(tournament, groupATeams, "Group A", matchDateTime, allLocations, usedLocationIds));
+        matchDetails.addAll(scheduleMatchesForGroup(tournament, groupATeams, MatchConstants.GROUP_A, matchDateTime, allLocations, usedLocationIds));
 
         // Update matchDateTime to ensure Group B matches start after Group A matches
         matchDateTime = matchDateTime.plusDays(1);
 
         // Schedule matches for Group B
-        matchDetails.addAll(scheduleMatchesForGroup(tournament, groupBTeams, "Group B", matchDateTime, allLocations, usedLocationIds));
+        matchDetails.addAll(scheduleMatchesForGroup(tournament, groupBTeams, MatchConstants.GROUP_B, matchDateTime, allLocations, usedLocationIds));
 
         // Update tournament status
         tournament.setStatus(TournamentStatus.ONGOING);
@@ -148,7 +159,8 @@ public class MatchSchedulingService {
                 Team teamA = teams.get(i);
                 Team teamB = teams.get(j);
 
-                // Avoid scheduling matches during night time
+                // Avoid scheduling matches during nighttime
+
                 while (matchDateTime.getHour() < 6 || matchDateTime.getHour() > 20) {
                     matchDateTime = matchDateTime.plusDays(1).withHour(10);
                 }
@@ -183,7 +195,6 @@ public class MatchSchedulingService {
                 match.setMatchStatus(MatchConstants.PLANNED);
                 match.setMatchGroup(group);
 
-                System.out.println("Saving match with Tournament: " + match.getTournament());
 
                 cricketMatchRepository.save(match);
 
@@ -213,6 +224,7 @@ public class MatchSchedulingService {
     /**
      * Find an unused location that has not been assigned to any previous match.
      */
+
     private Location findUnusedLocation(List<Location> allLocations, Set<Long> usedLocationIds) {
         for (Location location : allLocations) {
             if (!usedLocationIds.contains(location.getId())) {
@@ -223,161 +235,10 @@ public class MatchSchedulingService {
     }
 
 
-    /// schedule the semifinal matches
-
-//    public List<MatchDetailsDTO> scheduleSemiFinals(){
-//        List<MatchDetailsDTO> matchDetailsList = new ArrayList<>();
-//        List<TeamStats> groupAStats = teamStatsRepository.findTeamStatsByMatchGroup("Group A");
-//        List<TeamStats> groupBStats = teamStatsRepository.findTeamStatsByMatchGroup("Group B");
-//        // Create maps to aggregate points for each team
-//        Map<String, Integer> groupAPointsMap = new HashMap<>();
-//        Map<String, Integer> groupBPointsMap = new HashMap<>();
-//        // Aggregate points for Group A
-//        for (TeamStats stats : groupAStats) {
-//            String teamName = stats.getTeamName();
-//            Integer currentPoints = groupAPointsMap.getOrDefault(teamName, 0);
-//            groupAPointsMap.put(teamName, currentPoints + stats.getPoints());
-//        }
-//
-//        // Aggregate points for Group B
-//        for (TeamStats stats : groupBStats) {
-//            String teamName = stats.getTeamName();
-//            Integer currentPoints = groupBPointsMap.getOrDefault(teamName, 0);
-//            groupBPointsMap.put(teamName, currentPoints + stats.getPoints());
-//        }
-//
-//        // Convert maps to lists
-//        List<Map.Entry<String, Integer>> groupAList = new ArrayList<>(groupAPointsMap.entrySet());
-//        List<Map.Entry<String, Integer>> groupBList = new ArrayList<>(groupBPointsMap.entrySet());
-//
-//        // Sort lists based on points in descending order
-//        groupAList.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-//        groupBList.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-//
-//
-//        // Get top 2 teams from each group
-//        List<String> topTeamsGroupA = groupAList.stream().limit(1).map(Map.Entry::getKey).collect(Collectors.toList());
-//        List<String> topTeamsGroupB = groupBList.stream().limit(1).map(Map.Entry::getKey).collect(Collectors.toList());
-//
-//        // Retrieve full TeamStats for these top teams
-//        List<TeamStats> topTeamStatsGroupA = groupAStats.stream()
-//                .filter(stats -> topTeamsGroupA.contains(stats.getTeamName()))
-//                .collect(Collectors.toList());
-//
-//        List<TeamStats> topTeamStatsGroupB = groupBStats.stream()
-//                .filter(stats -> topTeamsGroupB.contains(stats.getTeamName()))
-//                .collect(Collectors.toList());
-//
-//        // Convert to MatchDetailsDTO
-//        // Assuming MatchDetailsDTO has a constructor or setters to populate its fields
-//        for (TeamStats stats : topTeamStatsGroupA) {
-//            matchDetailsList.add(new MatchDetailsDTO(
-//                    stats.getMatchId(),
-//                    stats.getTeamName(),
-//                    stats.getPoints(),
-//                    stats.getLocation(),
-//                    stats.getMatchType(),
-//                    "SemiFinals",
-//                    stats.getMatchGroup(),
-//                    "ONGOING"
-//            ));
-//        }
-//
-//        for (TeamStats stats : topTeamStatsGroupB) {
-//            matchDetailsList.add(new MatchDetailsDTO(
-//                    stats.getMatchId(),
-//                    stats.getTeamName(),
-//                    stats.getPoints(),
-//                    stats.getLocation(),
-//                    stats.getMatchType(),
-//                    "SemiFinals",
-//                    stats.getMatchGroup(),
-//                    "ONGOING"
-//            ));
-//        }
-//
-//        // Return the sorted list of match details
-//        return matchDetailsList;
-//
-//    }
-
-
-//    public List<MatchDetailsDTO> scheduleSemiFinals(Long tournamentId) {
-//        List<MatchDetailsDTO> matchDetailsList = new ArrayList<>();
-//
-//        // Fetch the team stats for both groups
-//        List<TeamStats> groupAStats = teamStatsRepository.findTeamStatsByMatchGroup("Group A");
-//        List<TeamStats> groupBStats = teamStatsRepository.findTeamStatsByMatchGroup("Group B");
-//
-//        // Create maps to aggregate points for each team
-//        Map<String, Integer> groupAPointsMap = new HashMap<>();
-//        Map<String, Integer> groupBPointsMap = new HashMap<>();
-//
-//        // Aggregate points for Group A
-//        for (TeamStats stats : groupAStats) {
-//            String teamName = stats.getTeamName();
-//            Integer currentPoints = groupAPointsMap.getOrDefault(teamName, 0);
-//            groupAPointsMap.put(teamName, currentPoints + stats.getPoints());
-//        }
-//
-//        // Aggregate points for Group B
-//        for (TeamStats stats : groupBStats) {
-//            String teamName = stats.getTeamName();
-//            Integer currentPoints = groupBPointsMap.getOrDefault(teamName, 0);
-//            groupBPointsMap.put(teamName, currentPoints + stats.getPoints());
-//        }
-//
-//        // Convert maps to lists and sort based on points in descending order
-//        List<Map.Entry<String, Integer>> groupAList = new ArrayList<>(groupAPointsMap.entrySet());
-//        List<Map.Entry<String, Integer>> groupBList = new ArrayList<>(groupBPointsMap.entrySet());
-//        groupAList.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-//        groupBList.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
-//
-//        // Get top 2 teams from each group
-//        List<String> topTeamsGroupA = groupAList.stream().limit(2).map(Map.Entry::getKey).collect(Collectors.toList());
-//        List<String> topTeamsGroupB = groupBList.stream().limit(2).map(Map.Entry::getKey).collect(Collectors.toList());
-//        Location location = new Location();
-//        location.setId(1);
-//        location.setCountry("Australia");
-//        location.setGround("Melbourne Cricket Ground");
-//        List<CricketMatch> cricketMatches = new ArrayList<>();
-//        // Create matches between top teams of Group A and Group B
-//        if (topTeamsGroupA.size() == 2 && topTeamsGroupB.size() == 2) {
-//            // Create matches for all combinations of top teams from Group A and Group B
-//            for (int i = 0; i < topTeamsGroupA.size()-1; i++) {
-//                for (int j = 0; j < topTeamsGroupB.size()-1; j++) {
-//                    String teamA = topTeamsGroupA.get(i);
-//                    String teamB = topTeamsGroupB.get(j);
-//
-//                    CricketMatch match = new CricketMatch();
-//                    Team teamObjA = teamRepository.findTeamByName(teamA);
-//                    Team teamObjB = teamRepository.findTeamByName(teamB);
-//                    match.setMatchGroup("Knock out Stages");
-//                    match.setLocation(location);
-//                    match.setTeamA(teamObjA);
-//                    match.setTeamB(teamObjB);
-//                    match.setLive(false);
-//                    match.setMatchStage(String.valueOf(MatchStage.SEMIFINAL));
-//                    Tournament tournament = tournamentRepository.findById(tournamentId).get();
-//                    match.setTournament(tournament);
-//                    match.setMatchStatus(TournamentStatus.ONGOING.name());
-//                    cricketMatches.add(match);
-//
-//                    cricketMatchRepository.save(match);
-//
-//                }
-//            }
-//        }
-//
-//
-//        for(CricketMatch match : cricketMatches) {
-//            matchDetailsList.add(convertToMatchDetailsDTO(match));
-//        }
-//
-//        // Return the list of match details
-//        return matchDetailsList;
-//    }
-
+    /**
+     * Schedules semifinal matches after the playoff matches are complete.
+     * Ensures that semifinals are only scheduled when all playoff matches have completed.
+     */
 
     public List<MatchDetailsDTO> scheduleSemiFinals(Long tournamentId) {
         List<MatchDetailsDTO> matchDetailsList = new ArrayList<>();
@@ -437,15 +298,6 @@ public class MatchSchedulingService {
         usedLocationIds.add(availableLocation.getId());
 
 
-//        // Set up location
-//        Location location = new Location();
-//        location.setId(1);
-//        location.setCountry("Australia");
-//        location.setGround("Melbourne Cricket Ground");
-
-
-
-        // List to store the matches to be created
         List<CricketMatch> cricketMatches = new ArrayList<>();
 
         // Create matches between top teams of Group A and Group B
@@ -462,14 +314,6 @@ public class MatchSchedulingService {
 
         // Return the list of match details
         return matchDetailsList;
-    }
-
-    private boolean checkGroupStageMatchesCompleted(Long tournamentId) {
-        // Check if all matches in Group A and Group B are completed
-        boolean groupACompleted = cricketMatchRepository.allMatchesInGroupCompletedForStage(tournamentId, "Group A", "Completed");
-        boolean groupBCompleted = cricketMatchRepository.allMatchesInGroupCompletedForStage(tournamentId, "Group B", "Completed");
-
-        return groupACompleted && groupBCompleted;
     }
 
 
@@ -496,6 +340,11 @@ public class MatchSchedulingService {
 
     public MatchDetailsDTO getFinalScheduleMatches(Long tournamentId)  {
         List<TeamStats> teamStats = teamStatsRepository.findTop2TeamsByMatchGroupAndPoints("Knock out Stages");
+
+        if (teamStats.size() < 2) {
+            throw new RuntimeException("Not enough teams to schedule the final match. Knock-out stages might not be completed.");
+        }
+
         Tournament tournament = tournamentRepository.findById(tournamentId).orElse(null);
         LocalDateTime matchDateTime = LocalDateTime.now();
         CricketMatch match = new CricketMatch();
@@ -513,7 +362,6 @@ public class MatchSchedulingService {
             throw new RuntimeException("Not enough unique locations available for all matches.");
         }
         usedLocationIds.add(availableLocation.getId());
-//        Location location = new Location(1,"Australia","Melbourne Cricket Ground");
         match.setLocation(availableLocation);
         match.setTeamA(teamObjA);
         match.setTeamB(teamObjB);

@@ -5,15 +5,31 @@ public enum MatchType {
 }
 
 
-/*
-*  TestMatch rules
-*  this game is end till all the 10 wickets down until they play
-*  and there is 3 round for the single test and bases on that they will evaluate
-*
-*   example  1 ind / aus == first match ind score = 100 && aus score is 101
-*                           second match aus starts with 101+ current match scores 101+ 100  && inda 100 + 150
-*                           third match ind starts with 250 + current match scores 120  && aus 100
-*                           so the total calculation the india wins
-*
-*
-* */
+/**
+ * Test Match Rules:
+ *
+ * - A Test Match continues until all 10 wickets are lost for each team.
+ * - Each team gets to bat twice and bowl twice.
+ * - The team with the highest total score across all innings wins the match.
+ *
+ * **Example: **
+ * 1. **First Innings: **
+ *    - India scores 100 runs.
+ *    - Australia scores 101 runs.
+ *
+ * 2. **Second Innings: **
+ *    - Australia starts with a total of 101 runs from their first innings.
+ *    - India scores 150 runs in their second innings.
+ *    - Australia adds their second innings score to their previous total.
+ *    - India adds their second innings score to their previous total.
+ *
+ * 3. **Third Innings: **
+ *    - India starts their third innings with their total from previous innings.
+ *    - Australia scores 100 runs in their third innings.
+ *    - India adds their third innings score to their total.
+ *    - Australia adds their third innings score to their total.
+ *
+ * **Result: **
+ * - The team with the highest total score after all innings is the winner.
+ * - In this example, India’s final score is higher than Australia’s, so India wins.
+ */

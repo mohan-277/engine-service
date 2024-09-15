@@ -21,8 +21,6 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     @Query("SELECT DISTINCT TRIM(UPPER(t.country)) FROM Player t")
     List<String> findDistinctCountries();
 
-    List<Player> findByTeamAndSpecialization(Team team, String specialization);
-
 
     List<Player> findByTeamId(Long teamId);
 }

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Data
 @AllArgsConstructor
+@Builder
 public class TournamentDTO {
     private Long  tournamentDTOId ;
     private String tournamentName;
@@ -19,7 +20,7 @@ public class TournamentDTO {
     private Duration matchInterval;
     private Integer numberOfTeams; // Number of teams participating
     private Integer registeredTeamsCount;
-    private TournamentStatus status; // planned , ongoing , started
+    private TournamentStatus status; // planned, ongoing, started
 
 
     public TournamentDTO(Long id, String tournamentName, String tournamentType, String location, LocalDateTime startDate, Duration matchInterval, int numberOfTeams, int registeredTeamsCount, TournamentStatus status) {
