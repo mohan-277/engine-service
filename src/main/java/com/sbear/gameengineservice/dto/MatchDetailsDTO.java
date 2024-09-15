@@ -15,7 +15,6 @@ public class MatchDetailsDTO {
     private Long matchId;
     private String teamA;
     private String teamB;
-//    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime matchDateTime;
     private String location;// Include the stage of the match in the DTO
     private String matchType; // Match type (e.g., IPL, T20, ODI, Test)
