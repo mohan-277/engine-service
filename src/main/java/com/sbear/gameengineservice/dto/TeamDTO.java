@@ -6,10 +6,8 @@ import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
-@Getter
 @Builder
-@ToString
+@Data
 public class TeamDTO {
     private String name;
     private String country;

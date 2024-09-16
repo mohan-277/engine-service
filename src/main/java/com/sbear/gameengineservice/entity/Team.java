@@ -49,10 +49,10 @@ public class Team {
 
      @Lob
      @Column(name = "logo")
-     private byte[] logo; // For storing the team's logo this is for the landing page of the teams
+     private byte[] logo; // For storing the team's logo, this is for the landing page of the teams
 
 
-     // according to the requirement we will use
+     // according to the requirement, we will use
      private String icon; // For storing a text or URL for the team's icon  this for the icon on the matches
 
 
@@ -93,20 +93,6 @@ public class Team {
     public Team() {}
 
 
-
-    public void setWicketsLost(Integer wicketsLost) {
-        this.wicketsLost = wicketsLost;
-    }
-
-    public Double getOversPlayed() {
-        return oversPlayed;
-    }
-
-    public void setOversPlayed(Double oversPlayed) {
-        this.oversPlayed = oversPlayed;
-    }
-
-    // Other existing getters and setters
 
     public Long getId() {
         return teamId;

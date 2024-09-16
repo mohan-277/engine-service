@@ -3,15 +3,14 @@ package com.sbear.gameengineservice.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
-import java.util.*;
-
-
 import com.sbear.gameengineservice.dto.PlayerDTO;
 import com.sbear.gameengineservice.dto.TeamDTO;
+import com.sbear.gameengineservice.dto.TeamSummary;
 import com.sbear.gameengineservice.entity.Player;
 import com.sbear.gameengineservice.entity.Team;
 import com.sbear.gameengineservice.exceptions.ResourceNotFoundException;
+import com.sbear.gameengineservice.mappers.PlayerMapper;
+import com.sbear.gameengineservice.mappers.TeamMapper;
 import com.sbear.gameengineservice.repository.PlayerRepository;
 import com.sbear.gameengineservice.repository.StatusOfMatchRepository;
 import com.sbear.gameengineservice.repository.TeamRepository;
@@ -22,6 +21,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class TeamServiceImplTest {
 
@@ -34,149 +40,188 @@ public class TeamServiceImplTest {
     @Mock
     private StatusOfMatchRepository statusOfMatchRepository;
 
-    @InjectMocks
-    private TeamServiceImpl teamServiceImpl;
-
     @Mock
-    private TeamService teamService;
+    private TeamMapper teamMapper;
+
+    @InjectMocks
+    private TeamServiceImpl teamService;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
+
     @Test
-    public void testSetPlayersForTeamWhenTeamAndPlayersExist() {
-        // Given
-        Long teamId = 1L;
+    public void testSetPlayersForTeam_TeamNotFound() {
+        Integer teamId = 1;
+        PlayerDTO playerDTO = new PlayerDTO();
+        playerDTO.setId(1L);
+        List<PlayerDTO> playerDTOs = Collections.singletonList(playerDTO);
+
+        when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
+
+        EntityNotFoundException thrown = assertThrows(EntityNotFoundException.class, () -> teamService.setPlayersForTeam(teamId, playerDTOs));
+        assertEquals("Team not found", thrown.getMessage());
+    }
+
+    @Test
+    @Transactional
+    public void testSetPlayersForTeam_Success() {
+        Integer teamId = 1;
         Team team = new Team();
-        Player player1 = new Player();
-        player1.setId(1L);
-        Player player2 = new Player();
-        player2.setId(2L);
-        List<PlayerDTO> playerDTOs = Arrays.asList(new PlayerDTO(1L), new PlayerDTO(2L));
+        team.setId(Long.valueOf(teamId)); // Ensure the team has an ID
 
-        when(teamRepository.findById(Math.toIntExact(teamId))).thenReturn(Optional.of(team));
-        when(playerRepository.findById(1L)).thenReturn(Optional.of(player1));
-        when(playerRepository.findById(2L)).thenReturn(Optional.of(player2));
+        PlayerDTO playerDTO = new PlayerDTO();
+        playerDTO.setId(1L);
+        playerDTO.setName("Player Name");
+        playerDTO.setDateOfBirth("2000-01-01");
 
-        // When
-        teamServiceImpl.setPlayersForTeam(teamId, playerDTOs);
+        List<PlayerDTO> playerDTOs = Collections.singletonList(playerDTO);
 
-        // Then
-        verify(teamRepository).findById(Math.toIntExact(teamId));
-        verify(playerRepository).findById(1L);
-        verify(playerRepository).findById(2L);
+        // Mocking repository responses
+        when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
+        when(playerRepository.existsById(playerDTO.getId())).thenReturn(true);
+
+        // Mocking PlayerMapper conversion
+        Player mockPlayer = new Player();
+        mockPlayer.setId(playerDTO.getId());
+        when(PlayerMapper.toEntity(playerDTO)).thenReturn(mockPlayer);
+
+        // Call the service method
+        teamService.setPlayersForTeam(teamId, playerDTOs);
+
+        // Verify interactions with mock repositories
+        verify(teamRepository).findById(teamId);
+        verify(playerRepository).existsById(playerDTO.getId());
         verify(teamRepository).save(team);
-        assertTrue(team.getPlayers().contains(player1));
-        assertTrue(team.getPlayers().contains(player2));
+
+        // Verify that the player was added to the team
+        assertTrue(team.getPlayers().contains(mockPlayer), "The player should be added to the team");
     }
-
     @Test
-    public void testSetPlayersForTeamWhenTeamDoesNotExist() {
-        // Given
-        long teamId = 1L;
-        List<PlayerDTO> playerDTOs = Collections.singletonList(new PlayerDTO(1L));
-
-        when(teamRepository.findById(Math.toIntExact(teamId))).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(EntityNotFoundException.class, () -> {
-            teamServiceImpl.setPlayersForTeam(teamId, playerDTOs);
-        });
-    }
-
-    @Test
-    public void testSetPlayersForTeamWhenPlayerDoesNotExist() {
-        // Given
-        long teamId = 1L;
-        Team team = new Team();
-        List<PlayerDTO> playerDTOs = Collections.singletonList(new PlayerDTO(1L));
-
-        when(teamRepository.findById(Math.toIntExact(teamId))).thenReturn(Optional.of(team));
-        when(playerRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(EntityNotFoundException.class, () -> {
-            teamServiceImpl.setPlayersForTeam(teamId, playerDTOs);
-        });
-    }
-
-
-
-
-
-    @Test
-    public void testGetTeamSummaryWhenCoachDoesNotExist() {
-        // Given
+    public void testGetTeamSummary_Success() {
         Long coachId = 1L;
+
+        // Create a mock of TeamSummary interface
+        TeamSummary mockTeamSummary = mock(TeamSummary.class);
+
+        // Stub the repository method to return the mock TeamSummary
+        when(teamRepository.findTeamSummaryByCoachId(coachId)).thenReturn(mockTeamSummary);
+
+        // Call the method to test
+        TeamSummary result = teamService.getTeamSummary(coachId);
+
+        // Verify the result
+        assertNotNull(result);
+        assertEquals(mockTeamSummary, result);
+
+        // Verify that the repository method was called with the correct parameter
+        verify(teamRepository).findTeamSummaryByCoachId(coachId);
+    }
+
+    @Test
+    public void testGetTeamSummary_NotFound() {
+        Long coachId = 1L;
+
         when(teamRepository.findTeamSummaryByCoachId(coachId)).thenReturn(null);
 
-        // When & Then
-        assertThrows(ResourceNotFoundException.class, () -> {
-            teamServiceImpl.getTeamSummary(coachId);
-        });
+        ResourceNotFoundException thrown = assertThrows(ResourceNotFoundException.class, () -> teamService.getTeamSummary(coachId));
+        assertEquals("Coach ID 1 does not exist. Please provide a valid coach ID.", thrown.getMessage());
     }
 
     @Test
-    public void testConvertToTeamDto() {
-        // Given
+    public void testGetTeamById_Success() {
+        Integer teamId = 1;
         Team team = new Team();
-        team.setName("Team A");
-        team.setTeamCaptain("Captain A");
-        team.setCoachName("Coach A");
-        team.setCountry("Country A");
-        team.setOwner("Owner A");
+        TeamDTO teamDTO = new TeamDTO();
 
-        Player player = new Player();
-        player.setId(1L);
-        player.setName("Player A");
-        player.setCountry("Country A");
-        player.setRuns(1000L);
-        player.setWickets(50L);
-        player.setGender("Male");
-        player.setDateOfBirth(LocalDate.of(1990, 5, 15));
-        player.setHighScore(150);
-        player.setPlayedMatches(100);
+        when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
+        when(teamMapper.toDTO(team)).thenReturn(teamDTO);
 
-        team.setPlayers(Collections.singletonList(player));
+        TeamDTO result = teamService.getTeamById(teamId);
 
-        // When
-        TeamDTO teamDTO = teamServiceImpl.convertToTeamDto(team);
-
-        // Then
-        assertEquals("Team A", teamDTO.getName());
-        assertEquals("Captain A", teamDTO.getTeamCaptain());
-        assertEquals("Coach A", teamDTO.getCoach());
-        assertEquals("Country A", teamDTO.getCountry());
-        assertEquals("Owner A", teamDTO.getOwner());
-
-        PlayerDTO playerDTO = teamDTO.getPlayers().get(0);
-        assertEquals(1L, playerDTO.getId());
-        assertEquals("Player A", playerDTO.getName());
-        assertEquals("Country A", playerDTO.getCountry());
-        assertEquals(1000, playerDTO.getRuns());
-        assertEquals(50, playerDTO.getWickets());
-        assertEquals("Male", playerDTO.getGender());
-        assertNotNull(playerDTO.getDateOfBirth());
-        assertEquals(150, playerDTO.getHighScore());
-        assertEquals(100, playerDTO.getPlayedMatches());
+        assertNotNull(result);
+        assertEquals(teamDTO, result);
     }
 
     @Test
-    public void testGetTheCountOfTheStagesStarted() {
-        // Given
-        String matchStageName = "SEMIFINAL";
+    public void testGetTeamById_NotFound() {
+        Integer teamId = 1;
+
+        when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
+
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> teamService.getTeamById(teamId));
+        assertEquals("Team not found", thrown.getMessage());
+    }
+
+    @Test
+    @Transactional
+    public void testCreateTeam_Success() {
+        TeamDTO teamDTO = new TeamDTO();
+        Team team = new Team();
+        PlayerDTO playerDTO = new PlayerDTO();
+        playerDTO.setName("Player 1");
+        playerDTO.setDateOfBirth("2000-01-01");
+
+        when(teamMapper.toEntity(teamDTO)).thenReturn(team);
+        when(playerRepository.findByNameAndDateOfBirth(playerDTO.getName(), LocalDate.parse(playerDTO.getDateOfBirth())))
+                .thenReturn(Optional.empty());
+        when(playerRepository.save(any(Player.class))).thenReturn(new Player());
+        when(teamRepository.save(team)).thenReturn(team);
+        when(teamRepository.findMaxCoachId()).thenReturn(0L);
+
+        teamService.createTeam(teamDTO);
+
+        verify(teamRepository).save(team);
+    }
+
+    @Test
+    public void testGetTheCountOfTheStagesStarted_Success() {
+        String matchStageName = "Group Stage";
         Long count = 5L;
+
         when(statusOfMatchRepository.findTopCountByNameOrderByCountDesc(matchStageName)).thenReturn(count);
 
-        // When
-        Long result = teamServiceImpl.getTheCountOfTheStagesStarted(matchStageName);
+        Long result = teamService.getTheCountOfTheStagesStarted(matchStageName);
 
-        // Then
+        assertNotNull(result);
         assertEquals(count, result);
     }
 
+    @Test
+    public void testGetAllTeams_Success() {
+        List<Team> teams = Collections.singletonList(new Team());
+        List<TeamDTO> teamDTOs = Collections.singletonList(new TeamDTO());
 
+        when(teamRepository.findAll()).thenReturn(teams);
+        when(teamMapper.toDTOList(teams)).thenReturn(teamDTOs);
 
+        List<TeamDTO> result = teamService.getAllTeams();
+
+        assertNotNull(result);
+        assertEquals(teamDTOs, result);
+    }
+
+    @Test
+    public void testGetAllTeamSummaries_Success() {
+        // Create a mock of the TeamSummary interface
+        TeamSummary mockTeamSummary = mock(TeamSummary.class);
+
+        // Create a list with the mocked TeamSummary
+        List<TeamSummary> summaries = Collections.singletonList(mockTeamSummary);
+
+        // Stub the repository method to return the list of mocks
+        when(teamRepository.findAllTeamSummaries()).thenReturn(summaries);
+
+        // Call the service method
+        List<TeamSummary> result = teamService.getAllTeamSummaries();
+
+        // Verify the result
+        assertNotNull(result);
+        assertEquals(summaries, result);
+
+        // Verify that the repository method was called
+        verify(teamRepository).findAllTeamSummaries();
+    }
 }

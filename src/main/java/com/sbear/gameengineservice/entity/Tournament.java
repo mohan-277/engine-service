@@ -34,9 +34,6 @@ public class Tournament {
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamRegistration> teamRegistrations = new ArrayList<>();
 
-//    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<CricketMatch> matches = new ArrayList<>();
-
 
     private TournamentStatus status;
 }

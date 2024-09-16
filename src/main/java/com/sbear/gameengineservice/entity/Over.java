@@ -18,19 +18,16 @@ import java.util.List;
 public class Over {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "over_id")
+
     private   Long id;
     private   int numbers; //
     @OneToMany
-    private List<Ball> balls = new ArrayList<>(); // one over has 6 ball some cases  noball , bouncers  will also need to be calculated
+    private List<Ball> balls = new ArrayList<>(); // one over has ball 6 some cases no Ball & bouncers will also need to be calculated
 
 
     @ManyToOne
     @JoinColumn(name = "innings_id")
     private Innings innings; // This field should match the mappedBy in Innings
 
-    public Object getBallsInOver() {
-        return balls.size();
-    }
 
 }

@@ -10,7 +10,6 @@ import java.util.List;
 @Repository
 public interface BallRepository extends JpaRepository<Ball, Integer>, BallRepositoryCustom {
 
-    List<Ball> findByMatchIdAndInningsId(Long matchId, Long inningsId);
 
     List<Ball> findByInningsId(Long id);
 }

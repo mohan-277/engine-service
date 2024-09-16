@@ -22,17 +22,22 @@ public class TeamRegistration {
     @JoinColumn(name = "tournament_id")
     private Tournament tournament;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
     @ManyToOne
     @JoinColumn(name = "team_id")
     private Team team;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "coach_id")
-//    private Coach coach;
 
     private String groupType;
     private String coachName;
 
     private LocalDateTime registrationDate;
+
+    public TeamRegistration(Team team, String groupType) {
+        this.team = team;
+        this.groupType = groupType;
+    }
+
+    public TeamRegistration(Team team) {
+        this.team = team;
+    }
 }

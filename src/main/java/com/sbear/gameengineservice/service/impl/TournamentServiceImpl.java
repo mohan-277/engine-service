@@ -9,9 +9,9 @@ import com.sbear.gameengineservice.repository.*;
 import com.sbear.gameengineservice.repository.stats.PlayerStatsRepository;
 import com.sbear.gameengineservice.repository.stats.TeamStatsRepository;
 import com.sbear.gameengineservice.service.TournamentService;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,193 +21,66 @@ import java.util.stream.Collectors;
 
 @Service
 public class TournamentServiceImpl implements TournamentService {
-    @Autowired
-    private TeamStatsRepository teamStatsRepository;
-    @Autowired
-    private BallRepository ballRepository;
-    @Autowired
-    private InningsRepository inningsRepository;
 
-    public TournamentServiceImpl(TournamentRepository tournamentRepository, TeamRegistrationRepository teamRegistrationRepository, TeamRepository teamRepository, CoachRepository coachRepository, LocationRepository locationRepository, CricketMatchRepository cricketMatchRepository) {
+    private final TeamStatsRepository teamStatsRepository;
+
+    private final BallRepository ballRepository;
+
+    private final  InningsRepository inningsRepository;
+
+    private final TournamentRepository tournamentRepository;
+
+    private final TeamRegistrationRepository teamRegistrationRepository;
+
+    private final TeamRepository teamRepository;
+
+    private  final CricketMatchRepository cricketMatchRepository;
+
+    private final PlayerStatsRepository playerStatsRepository;
+
+    public TournamentServiceImpl(TeamStatsRepository teamStatsRepository, BallRepository ballRepository, InningsRepository inningsRepository, TournamentRepository tournamentRepository, TeamRegistrationRepository teamRegistrationRepository,
+                                 TeamRepository teamRepository,CricketMatchRepository cricketMatchRepository, PlayerStatsRepository playerStatsRepository) {
+        this.teamStatsRepository = teamStatsRepository;
+        this.ballRepository = ballRepository;
+        this.inningsRepository = inningsRepository;
+
         this.tournamentRepository = tournamentRepository;
         this.teamRegistrationRepository = teamRegistrationRepository;
         this.teamRepository = teamRepository;
-        this.coachRepository = coachRepository;
-        this.locationRepository = locationRepository;
         this.cricketMatchRepository = cricketMatchRepository;
+        this.playerStatsRepository = playerStatsRepository;
     }
 
-    @Autowired
-    private TournamentRepository tournamentRepository;
 
-    @Autowired
-    private TeamRegistrationRepository teamRegistrationRepository;
+    /**
+     * Retrieves a list of team summaries for a specific tournament.
+     * Converts the list of team registrations into a list of TeamSummaryDTO objects.
+     *
+     * @param tournamentId the ID of the tournament for which teams are being retrieved
+     * @return a list of TeamSummaryDTO objects containing details of registered teams
+     */
 
-    @Autowired
-    private TeamRepository teamRepository;
-
-    @Autowired
-    private CoachRepository coachRepository;
-
-    @Autowired
-    private LocationRepository locationRepository;
-
-    @Autowired
-    private  CricketMatchRepository cricketMatchRepository;
-
-    @Autowired
-    private PlayerStatsRepository playerStatsRepository;
-
-
-
-//    public void registerTeam(Long  tournamentId, TeamRegistrationDTO registrationDTO) throws Exception {
-////        Long tournamentId = registrationDTO.getTournamentId();
-//        Tournament tournament = tournamentRepository.findById(tournamentId)
-//                .orElseThrow(() -> new Exception("Tournament not found"));
-//
-//        // Assuming you have methods to find teams and coaches by details
-//        Team team = teamRepository.findById(registrationDTO.getId())
-//                .orElseThrow(() -> new Exception("Team not found"));
-//
-////        Coach coach = coachRepository.findByName(registrationDTO.getCoach())
-////                .orElseThrow(() -> new Exception("Coach not found"));
-//
-//        TeamRegistration registration = new TeamRegistration();
-//        registration.setTournament(tournament);
-//        registration.setTeam(team);
-//        registration.setCoachName(registrationDTO.getCoach());
-//        registration.setRegistrationDate(LocalDateTime.now());
-//
-//        teamRegistrationRepository.save(registration);
-//
-//    }
-
-
-    // this is for the registered teams for the tournament
     public List<TeamSummaryDTO> getRegisteredTeams(Long tournamentId) {
         List<TeamRegistration> registrations = teamRegistrationRepository.findTeamRegistrationByTournamentId(tournamentId);
 
-        // Map the registrations to TeamSummary
                     return registrations.stream()
                             .map(registration -> {
                                 Team team = registration.getTeam();
                                 return new TeamSummaryDTO(
-                                        Math.toIntExact(team.getTeamId()),  // Convert Long to Integer
+                                        Math.toIntExact(team.getTeamId()),
                                         team.getName(),
                                         team.getCountry(),
                                         team.getTeamCaptain(),
-                                        team.getCoachName(), // Assuming Coach's name or String representation
+                                        team.getCoachName(),
                                         team.getOwner()
                                 );
                             })
                             .collect(Collectors.toList());
     }
 
-//    public List<TeamSummary> getRegisteredTeams(Long tournamentId) {
-//        // Retrieve team summaries using the projection interface
-//        return teamRegistrationRepository.findTeamSummariesByTournamentId(tournamentId);
-//    }
-
-
-
-
-    @Transactional
-    public List<MatchDetailsDTO> scheduleRoundRobinMatches(Long tournamentId) {
-        // Fetch the tournament
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new RuntimeException("Tournament not found"));
-
-        // Fetch team registrations and map to teams
-        List<TeamRegistration> teamRegistrations = teamRegistrationRepository.findTeamRegistrationByTournamentId(tournamentId);
-        List<Team> teams = teamRegistrations.stream().map(TeamRegistration::getTeam).collect(Collectors.toList());
-
-        // Fetch all locations
-        List<Location> allLocations = locationRepository.findAll();
-
-        if (allLocations.isEmpty()) {
-            throw new RuntimeException("No locations available for scheduling matches.");
-        }
-
-        // Initialize a list to keep track of used location IDs
-        Set<Long> usedLocationIds = new HashSet<>();
-
-        int numberOfTeams = teams.size();
-        LocalDateTime matchDateTime = tournament.getStartDate();
-        List<MatchDetailsDTO> matchDetails = new ArrayList<>();
-
-        for (int i = 0; i < numberOfTeams; i++) {
-            for (int j = i + 1; j < numberOfTeams; j++) {
-                Team teamA = teams.get(i);
-                Team teamB = teams.get(j);
-
-                // Avoid scheduling matches during night time
-                while (matchDateTime.getHour() < 6 || matchDateTime.getHour() > 20) {
-                    matchDateTime = matchDateTime.plusDays(1).withHour(10);
-                }
-
-                // Check if match already exists
-                boolean matchExists = cricketMatchRepository.existsByTeamAAndTeamBAndMatchDateTime(
-                        teamA, teamB, matchDateTime);
-
-                if (matchExists) {
-                    continue; // Skip creating this match if it already exists
-                }
-
-                // Find an unused location
-                Location location = findUnusedLocation(allLocations, usedLocationIds);
-
-                if (location == null) {
-                    throw new RuntimeException("Not enough unique locations available for all matches.");
-                }
-
-                // Mark location as used
-                usedLocationIds.add(location.getId());
-
-                // Create and save the match
-                CricketMatch match = new CricketMatch();
-                match.setTeamA(teamA);
-                match.setTeamB(teamB);
-                match.setMatchType(tournament.getTournamentName());
-                match.setMatchDateTime(matchDateTime);
-                match.setTournament(tournament);
-                match.setLocation(location);
-
-                cricketMatchRepository.save(match);
-
-                // Create MatchDetailsDTO
-                MatchDetailsDTO matchDetail = new MatchDetailsDTO();
-                matchDetail.setMatchId(match.getId());
-                matchDetail.setTeamA(teamA.getName());
-                matchDetail.setTeamB(teamB.getName());
-                matchDetail.setMatchDateTime(matchDateTime);
-                matchDetail.setLocation(location.getCountry() + " - " + location.getGround());
-
-                matchDetails.add(matchDetail);
-
-                // Move to the next match date
-                matchDateTime = matchDateTime.plus(tournament.getMatchInterval());
-            }
-        }
-
-        // Update tournament status
-        tournament.setStatus(TournamentStatus.ONGOING);
-        tournamentRepository.save(tournament);
-
-        return matchDetails;
-    }
-
     /**
-     * Find an unused location that has not been assigned to any previous match.
+     * Admin Creates and saves a new tournament if at least six teams are specified.
      */
-    private Location findUnusedLocation(List<Location> allLocations, Set<Long> usedLocationIds) {
-        for (Location location : allLocations) {
-            if (!usedLocationIds.contains(location.getId())) {
-                return location;
-            }
-        }
-        return null; // No unused locations found
-    }
-
 
     @Override
     public Tournament createTournament(TournamentDTO tournamentDTO) {
@@ -228,20 +101,9 @@ public class TournamentServiceImpl implements TournamentService {
         return tournamentRepository.save(tournament);
     }
 
-
-    // this for the easy conversion  to entity
-    public Tournament convertToEntity(TournamentDTO dto) {
-        Tournament tournament = new Tournament();
-        tournament.setTournamentName(dto.getTournamentName());
-        tournament.setTournamentType(dto.getTournamentType());
-        tournament.setLocation(dto.getLocation());
-        tournament.setStartDate(LocalDateTime.parse(dto.getStartDate()));
-        tournament.setMatchInterval(dto.getMatchInterval());
-        tournament.setNumberOfTeams(dto.getNumberOfTeams());
-        // Set default status if needed
-        tournament.setStatus(TournamentStatus.PLANNED);
-        return tournament;
-    }
+    /**
+     * Retrieves and converts all tournaments from the repository into a list of TournamentDTOs.
+     */
 
     public List<TournamentDTO> getAllTournaments(){
         List<Tournament> tournaments = tournamentRepository.findAll();
@@ -257,14 +119,19 @@ public class TournamentServiceImpl implements TournamentService {
                 tournament.getTournamentName(),
                 tournament.getTournamentType(),
                 tournament.getLocation(),
-                tournament.getStartDate(),
+                tournament.getStartDate() == null ? null : tournament.getStartDate().toString(),
                 tournament.getMatchInterval(),
                 tournament.getNumberOfTeams(),
-                registeredTeamsCount, // Pass the count of registered teams
-                tournament.getStatus() // Pass the status of the tournament
+                registeredTeamsCount,
+                tournament.getStatus()
         );
     }
 
+
+    /**
+     * Registers a team for a tournament using the provided tournament ID and team registration details.
+     * Throws an exception if the tournament is not found or is invalid for registration.
+     */
 
     public String registerTeamByTournamentID(Long tournamentId, TeamRegistrationDTO teamRegistrationDTO) throws Exception {
         Tournament tournament = tournamentRepository.findById(tournamentId)
@@ -273,6 +140,7 @@ public class TournamentServiceImpl implements TournamentService {
         if (tournament.getNumberOfTeams() < 6) {
             throw new IllegalArgumentException("Tournament not valid for registration");
         }
+
         // Check if the tournament has reached its team limit
         if (tournament.getNumberOfTeams() <= tournament.getTeamRegistrations().size()) {
             throw new IllegalArgumentException("Tournament is full. Registration not allowed.");
@@ -290,9 +158,9 @@ public class TournamentServiceImpl implements TournamentService {
 
         TeamRegistration registration = new TeamRegistration();
         registration.setTournament(tournament);
-        registration.setTeam(team); // Assuming a constructor for simplicity
+        registration.setTeam(team);
         registration.setCoachName(teamRegistrationDTO.getCoachName());
-        registration.setRegistrationDate(LocalDate.now().atStartOfDay()); // Example of setting registration date
+        registration.setRegistrationDate(LocalDate.now().atStartOfDay());
 
         // Validate group assignment or assign default
         String groupType = teamRegistrationDTO.getGroupType();
@@ -323,117 +191,112 @@ public class TournamentServiceImpl implements TournamentService {
         return groupACount <= groupBCount ? "Group A" : "Group B";
     }
 
+    /// get tournamentDTO by tournamentId
+
     public TournamentDTO getTournamentById(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId).get();
         return convertToDto(tournament);
     }
 
 
-    public MatchDetailsDTO getCricketMatchById(Long matchId){
-      CricketMatch cricketMatch = cricketMatchRepository.findById(matchId).get();
-      return  matchToMatchDetailDTOConverter(cricketMatch);
+    /// get MatchDetailsDTO by The matchID
+
+    public MatchDetailsDTO getCricketMatchById(Long matchId) {
+        CricketMatch cricketMatch = cricketMatchRepository.findById(matchId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+
+        return matchToMatchDetailDTOConverter(cricketMatch);
     }
 
-    public  MatchDetailsDTO matchToMatchDetailDTOConverter(CricketMatch cricketMatch){
+    private MatchDetailsDTO matchToMatchDetailDTOConverter(CricketMatch cricketMatch) {
+        if (cricketMatch == null) {
+            throw new IllegalArgumentException("CricketMatch cannot be null");
+        }
+
         MatchDetailsDTO matchDetailsDTO = new MatchDetailsDTO();
-        matchDetailsDTO.setMatchGroup(cricketMatch.getMatchGroup());
-        matchDetailsDTO.setMatchType(cricketMatch.getMatchType());
+
+        matchDetailsDTO.setMatchGroup(cricketMatch.getMatchGroup() != null ? cricketMatch.getMatchGroup() : "Unknown");
+        matchDetailsDTO.setMatchType(cricketMatch.getMatchType() != null ? cricketMatch.getMatchType() : "Unknown");
         matchDetailsDTO.setMatchId(cricketMatch.getId());
-        matchDetailsDTO.setMatchStage(cricketMatch.getMatchStage());
-        matchDetailsDTO.setTeamA(cricketMatch.getTeamA().getName());
-        matchDetailsDTO.setTeamB(cricketMatch.getTeamB().getName());
-        matchDetailsDTO.setLocation(cricketMatch.getLocation().getCountry());
+        matchDetailsDTO.setMatchStage(cricketMatch.getMatchStage() != null ? cricketMatch.getMatchStage() : "Unknown");
+
+        if (cricketMatch.getTeamA() != null && cricketMatch.getTeamA().getName() != null) {
+            matchDetailsDTO.setTeamA(cricketMatch.getTeamA().getName());
+        } else {
+            matchDetailsDTO.setTeamA("Unknown");
+        }
+
+        if (cricketMatch.getTeamB() != null && cricketMatch.getTeamB().getName() != null) {
+            matchDetailsDTO.setTeamB(cricketMatch.getTeamB().getName());
+        } else {
+            matchDetailsDTO.setTeamB("Unknown");
+        }
+
+        if (cricketMatch.getLocation() != null && cricketMatch.getLocation().getCountry() != null) {
+            matchDetailsDTO.setLocation(cricketMatch.getLocation().getCountry());
+        } else {
+            matchDetailsDTO.setLocation("Unknown");
+        }
+
         matchDetailsDTO.setMatchDateTime(cricketMatch.getMatchDateTime());
-        matchDetailsDTO.setMatchStatus(cricketMatch.getMatchStatus());
+        matchDetailsDTO.setMatchStatus(cricketMatch.getMatchStatus() != null ? cricketMatch.getMatchStatus() : "Unknown");
         matchDetailsDTO.setLive(cricketMatch.isLive());
+
         return matchDetailsDTO;
     }
+
+    /// Retrieves all player stats for the given match ID
 
    public List<PlayerStats> getALlPlayerStats(Long matchId){
         return playerStatsRepository.findByCurrentPlayingMatchId(matchId);
     }
 
+    /// Retrieves all team stats for the given match ID
     public List<TeamStats> getAllTeamStats(Long matchId){
         return  teamStatsRepository.findTeamStatsByMatchId(matchId);
     }
 
 
+    /// Retrieves all team stats for the specified match group type
     public List<TeamStats> getAllTeamStatsByMatchGroup(String matchGroupType){
         return teamStatsRepository.findTeamStatsByMatchGroup(matchGroupType);
     }
 
-//    public List<MatchDetailsDTO>
 
+    /// Retrieves all matches available in the match repository
     public List<MatchDetailsDTO> getAllMatches() {
         List<CricketMatch> cricketMatch = cricketMatchRepository.findAll();
         return matchToMatchDetailDTOConverter(cricketMatch);
 
     }
+
     public List<MatchDetailsDTO> matchToMatchDetailDTOConverter(List<CricketMatch> cricketMatches) {
-        List<MatchDetailsDTO> matchDetailsDTOList = new ArrayList<>();
-
-        for (CricketMatch match : cricketMatches) {
-            MatchDetailsDTO dto = new MatchDetailsDTO();
-            dto.setMatchId(match.getId());
-            dto.setMatchType(match.getMatchType());
-            dto.setMatchGroup(match.getMatchGroup());
-            dto.setLocation((match.getLocation()).getCountry());
-            dto.setMatchDateTime(match.getMatchDateTime());
-            dto.setMatchStage(match.getMatchStage());
-            dto.setMatchStatus(match.getMatchStatus());
-            dto.setTeamA(match.getTeamA().getName());
-            dto.setTeamB(match.getTeamB().getName());
-            dto.setLive(match.isLive());
-
-            matchDetailsDTOList.add(dto);
-        }
-
-        return matchDetailsDTOList;
+        return cricketMatches.stream()
+                .map(match -> MatchDetailsDTO.builder()
+                        .matchId(match.getId())
+                        .matchType(match.getMatchType())
+                        .matchGroup(match.getMatchGroup())
+                        .location(match.getLocation() != null && match.getLocation().getCountry() != null
+                                ? match.getLocation().getCountry()
+                                : "Unknown")
+                        .matchDateTime(match.getMatchDateTime())
+                        .matchStage(match.getMatchStage())
+                        .matchStatus(match.getMatchStatus())
+                        .teamA(match.getTeamA() != null && match.getTeamA().getName() != null
+                                ? match.getTeamA().getName()
+                                : "Unknown")
+                        .teamB(match.getTeamB() != null && match.getTeamB().getName() != null
+                                ? match.getTeamB().getName()
+                                : "Unknown")
+                        .live(match.isLive())
+                        .build())
+                .collect(Collectors.toList());
     }
 
-//    public MatchResponseDTO getMatchScoreBy(Long matchId,Long inningsId){
-////        CricketMatch match = cricketMatchRepository.findById(matchId)
-////                .orElseThrow(() -> new RuntimeException("Match not found"));
-//        Optional<Innings> innings = inningsRepository.findByInningsNumberAndMatchId(inningsId,matchId);
-//
-//        List<Ball> balls = ballRepository.findByMatchIdAndInningsId(matchId, inningsId);
-//
-//        List<BallDTO> ballDTOs = balls.stream().map(ball -> {
-//            BallDTO dto = new BallDTO();
-//            dto.setBallId(ball.getId());
-//            dto.setInningId(inningsId);
-//            dto.setOverNumber(ball.getOverNumber());
-//            dto.setBallNumber(ball.getBallNumber());
-//            dto.setStriker(ball.getStrikerName());
-//            dto.setNonStriker(ball.getNonStrikerName());
-//            dto.setBowler(ball.getBowlerName());
-//            dto.setRunsScored(ball.getRunsScored());
-////            dto.setExtra(ball.getExtra());
-//            dto.setWicket(ball.getWicketType());
-////            dto.setWicket(ball.getWicket() != null ? ball.getWicket().toString() : null);
-//            dto.setTotalScore(ball.getTotalScore());
-//            dto.setWicketNumber(ball.getWicketCount());
-//            return dto;
-//        }).collect(Collectors.toList());
-//
-//        MatchResponseDTO response = new MatchResponseDTO();
-//        if(innings.isPresent()){
-//            Innings inning = innings.get();
-//            response.setBattingTeamName(inning.getBattingTeam().getName());
-//            response.setBowlingTeamName(inning.getBowlingTeam().getName());
-//
-//        }
-//        response.setMatchId(matchId);
-//
-//        response.setBallDTOList(ballDTOs);
-//
-//        return response;
-//    }
 
-
+    /// Get match detail by the matchID
 
     public MatchResponseDTO getMatchDetails(Long matchId) {
-        // Fetch all innings for the match
         List<Innings> inningsList = inningsRepository.findByCricketMatchId(matchId);
 
         // Prepare the response DTO
@@ -441,7 +304,7 @@ public class TournamentServiceImpl implements TournamentService {
         response.setMatchId(matchId);
         response.setInnings(new ArrayList<>());
 
-        // For each innings, fetch the balls and populate the DTO
+        // For each inning, fetch the balls and populate the DTO
         for (Innings innings : inningsList) {
             InningsDTO inningsDTO = new InningsDTO();
             inningsDTO.setInningsId(innings.getId());
@@ -462,21 +325,20 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     private BallDTO convertToDTO(Ball ball) {
-        BallDTO dto = new BallDTO();
-        dto.setBallId(ball.getId());
-        dto.setInningId(ball.getInnings().getId());
-        dto.setOverNumber(ball.getOverNumber());
-        dto.setBallNumber(ball.getBallNumber());
-        dto.setStriker(ball.getStrikerName());
-        dto.setNonStriker(ball.getNonStrikerName());
-        dto.setBowler(ball.getBowlerName());
-        dto.setBallType(ball.getBallType());
-        dto.setRunsScored(ball.getRunsScored());
-        dto.setWicket(ball.getWicketType());
-        dto.setTotalScore(ball.getTotalScore());
-        dto.setWicketNumber(ball.getWicketCount());
-
-        return dto;
+        return BallDTO.builder()
+                .ballId(ball.getId())
+                .InningId(ball.getInnings().getId())
+                .overNumber(ball.getOverNumber())
+                .ballNumber(ball.getBallNumber())
+                .striker(ball.getStrikerName())
+                .nonStriker(ball.getNonStrikerName())
+                .bowler(ball.getBowlerName())
+                .ballType(ball.getBallType())
+                .runsScored(ball.getRunsScored())
+                .wicket(ball.getWicketType())
+                .totalScore(ball.getTotalScore())
+                .wicketNumber(ball.getWicketCount())
+                .build();
     }
 
 

@@ -15,7 +15,7 @@ public class PlayerStats {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id; // Unique identifier (auto-generated)
+    private Long id;
 
     @Column(name = "player_name")
     private String playerName;
@@ -46,6 +46,7 @@ public class PlayerStats {
 
     @Column(name = "current_playing_match_id")
     private Long currentPlayingMatchId; // this is for the differentiating/ retrieving the individual scoring for the player
+
 
 
 }

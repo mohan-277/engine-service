@@ -51,4 +51,8 @@ public class TeamStats {
     
     private Integer numberOfLosses;
 
+    public TeamStats(String teamName, int runs) {
+        this.teamName = teamName;
+        this.runs = runs;
+    }
 }

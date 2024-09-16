@@ -18,8 +18,6 @@ public interface TournamentService {
 
     TournamentDTO getTournamentById(Long tournamentId);
 
-  List<MatchDetailsDTO> scheduleRoundRobinMatches(Long tournamentId);
-
     MatchDetailsDTO getCricketMatchById(Long matchId);
 
     List<PlayerStats> getALlPlayerStats(Long matchId);

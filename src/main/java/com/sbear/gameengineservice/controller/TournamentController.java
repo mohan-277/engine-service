@@ -2,16 +2,12 @@ package com.sbear.gameengineservice.controller;
 
 
 import com.sbear.gameengineservice.dto.*;
-import com.sbear.gameengineservice.entity.Ball;
 import com.sbear.gameengineservice.entity.Tournament;
 import com.sbear.gameengineservice.entity.stats.PlayerStats;
 import com.sbear.gameengineservice.entity.stats.TeamStats;
 import com.sbear.gameengineservice.exceptions.ResourceNotFoundException;
-import com.sbear.gameengineservice.repository.BallRepository;
 import com.sbear.gameengineservice.service.TournamentService;
 import com.sbear.gameengineservice.service.impl.MatchSchedulingService;
-import com.sbear.gameengineservice.service.impl.MatchService_Test;
-import com.sbear.gameengineservice.websocket.services.CricketMatchV3Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +23,9 @@ import java.util.Map;
 public class TournamentController {
 
 
-
-//    private static final Logger logger = LoggerFactory.getLogger(TournamentController.class);
-
-
-
     TournamentService tournamentService;
     MatchSchedulingService matchSchedulingService;
 
-
-    @Autowired
-    CricketMatchV3Util cricketMatchV3Util;
 
 
     @Autowired
@@ -59,7 +47,7 @@ public class TournamentController {
     }
 
 
-    // this is for the tournament created by admin listing all the tournaments
+    /// this is for the tournament created by admin listing all the tournaments
     @GetMapping("/get-all-tournaments")
     public ResponseEntity<List<TournamentDTO>> getAllTournamentsCreatedAdmin() {
             return ResponseEntity.ok(tournamentService.getAllTournaments());
@@ -85,7 +73,7 @@ public class TournamentController {
 
 
 
-    // this will show how many teams registered in the particular tournament I'd admin access
+    /// this will show how many teams registered in the particular tournament I'd admin access
     @GetMapping("/{tournamentId}/teams")
     public ResponseEntity<List<TeamSummaryDTO>> getRegisteredTeams(@PathVariable Long tournamentId) {
         try {
@@ -132,30 +120,7 @@ public class TournamentController {
 
     }
 
-    /// this is for the testing
-    @PostMapping("/start/{matchId}")
-    public String startMatch(@PathVariable Long matchId) {
-//        matchServiceTest.startMatch(matchId);
-        return "Match simulation started for matchId " + matchId;
-    }
 
-
-    @PostMapping("/simulate")
-    public String simulateMatch(@RequestBody MatchDetailsDTO matchDetailsDTO) {
-        try {
-//            cricketMatchSimulation.simulateMatchFromDTO(matchDetailsDTO);
-            cricketMatchV3Util.simulateMatchFromDTO(matchDetailsDTO);
-
-//            matchSimulationService.simulateMatch(matchDetailsDTO);
-            return "Match simulation completed";
-        } catch (InterruptedException e) {
-            return "Error during simulation: " + e.getMessage();
-        }
-    }
-
-    /*
-    *   this is get the match details by the match ID  later i need to convert to the MatchDetails Dto so i can use this to get the simulate match
-    */
     @GetMapping("/matches/{matchId}")
     public ResponseEntity<?> getMatchById(@PathVariable Long matchId) {
         try {
@@ -182,15 +147,16 @@ public class TournamentController {
         return new ResponseEntity<>(tournamentService.getAllTeamStats(matchId), HttpStatus.OK);
     }
 
-//    @GetMapping("/team-group/{groupType}")
-//    public List<TeamStats> getAllTeamStatsByGroupType(@PathVariable  String groupType) {
-//        if(groupType.equals("GroupA")){
-//            return tournamentService.getAllTeamStatsByMatchGroup("Group A");
-//        }else {
-//            return tournamentService.getAllTeamStatsByMatchGroup("Group B");
-//        }
-//
-//    }
+
+    @GetMapping("/team-group/{groupType}")
+    public List<TeamStats> getAllTeamStatsByGroupType(@PathVariable  String groupType) {
+        if(groupType.equals("GroupA")){
+            return tournamentService.getAllTeamStatsByMatchGroup("Group A");
+        }else {
+            return tournamentService.getAllTeamStatsByMatchGroup("Group B");
+        }
+
+    }
 
 
 
@@ -222,7 +188,7 @@ public class TournamentController {
         return matchSchedulingService.getFinalScheduleMatches(tournamentId);
     }
 
-
+    /// this main ball by ball response sender api
     @GetMapping("/{matchId}/innings/balls")
     public MatchResponseDTO getBallDetails(@PathVariable Long matchId) {
         return tournamentService.getMatchDetails(matchId);

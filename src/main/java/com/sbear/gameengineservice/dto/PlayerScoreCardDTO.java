@@ -3,12 +3,9 @@ package com.sbear.gameengineservice.dto;
 
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+
 
 @Data
-@Getter
-@Setter
 public class PlayerScoreCardDTO {
     private String playerName;
     private String teamName;
@@ -24,7 +21,6 @@ public class PlayerScoreCardDTO {
     private Integer totalOversBowled;
     private Integer totalWicketsTaken;
 
-    // Constructor
     public PlayerScoreCardDTO(String playerName, String teamName, String playerType,
                               Long totalRuns, Integer totalBallsFaced, Integer totalFours, Integer totalSixes,
                               Integer totalDotBalls, Integer totalSingles, Integer totalTwos, Integer totalThrees,
@@ -42,5 +38,9 @@ public class PlayerScoreCardDTO {
         this.totalThrees = totalThrees;
         this.totalOversBowled = totalOversBowled;
         this.totalWicketsTaken = totalWicketsTaken;
+    }
+
+    public PlayerScoreCardDTO() {
+
     }
 }

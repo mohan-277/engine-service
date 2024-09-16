@@ -6,8 +6,6 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter
-@Getter
 public class TeamRegistrationDTO {
     private Integer teamID;
     private String name;

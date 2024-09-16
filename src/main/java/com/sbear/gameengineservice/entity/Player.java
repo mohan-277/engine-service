@@ -28,7 +28,6 @@ public class Player {
     private String userName;
     private String role;
     private Integer playedMatches;
-    // Getters and Setters for new fields
     @Setter
     @Getter
     private Long runs;
@@ -63,10 +62,9 @@ public class Player {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    @Column(name = "is_out", nullable = true)
+    @Column(name = "is_out", nullable = false)
     private Boolean isOut;
 
-    // Constructor
     public Player(String name, LocalDate of, String specialization, String gender, String country) {
         this.name = name;
         this.dateOfBirth = of;
@@ -75,82 +73,13 @@ public class Player {
         this.country = country;
     }
 
-    // Default constructor
+
     public Player() {}
 
 
-    // Other existing getters and setters
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public String getSpecialization() {
-        return specialization;
-    }
-
-    public void setSpecialization(String specialization) {
-        this.specialization = specialization;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public Integer getPlayedMatches() {
-        return playedMatches;
-    }
-
-    public void setPlayedMatches(Integer playedMatches) {
-        this.playedMatches = playedMatches;
-    }
-
-    public Integer getHighScore() {
-        return highScore;
-    }
-
-    public void setHighScore(Integer highScore) {
-        this.highScore = highScore;
-    }
 
 
-    public Team getTeam() {
-        return team;
-    }
 
-    public void setTeam(Team team) {
-        this.team = team;
-    }
 
-    public boolean isOut() {
-        return isOut;
-    }
 
-    public void setOut(boolean isOut) {
-        this.isOut = isOut;
-    }
 }

@@ -1,10 +1,7 @@
 package com.sbear.gameengineservice.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.context.annotation.Lazy;
 
 import java.time.LocalDateTime;
@@ -15,10 +12,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "cricket_matches")
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
+@Builder
 public class CricketMatch {
 
     @Id
@@ -33,7 +30,7 @@ public class CricketMatch {
     private String tossDecision; // e.g., "batting" or "bowling"
     @ManyToOne
     @Lazy
-    @JoinColumn(name = "team_a_id", nullable = false) // Column to store Team A ID
+    @JoinColumn(name = "team_a_id", nullable = false)// Column to store Team A ID
     private Team teamA;
 
     @ManyToOne

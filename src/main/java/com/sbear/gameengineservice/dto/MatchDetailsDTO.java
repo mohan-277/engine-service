@@ -1,14 +1,16 @@
 package com.sbear.gameengineservice.dto;
 
 import lombok.*;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@Setter
-@Getter
-@NoArgsConstructor
+
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class MatchDetailsDTO {
 
 
@@ -35,5 +37,11 @@ public class MatchDetailsDTO {
         this.matchGroup = matchGroup;
         this.live = true;
         this.matchStatus = ongoing;
+    }
+
+    public MatchDetailsDTO(String number, String teamA, String teamB ) {
+        this.matchId = Long.parseLong(number);
+        this.teamA = teamA;
+        this.teamB = teamB;
     }
 }
