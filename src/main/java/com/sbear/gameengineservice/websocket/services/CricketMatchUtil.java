@@ -45,7 +45,7 @@ public class CricketMatchUtil {
 
     private int determineOvers(String matchType) {
         return switch (matchType) {
-            case "T20" -> 5;
+            case "T20" -> 20;
             case "ODI" -> 60;
             case "Test" -> 100;
             default -> 10;

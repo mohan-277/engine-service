@@ -17,7 +17,6 @@ import java.util.List;
 @CrossOrigin("http://localhost:3000/")
 public class MatchController {
 
-  /// one method id need to delete
     TeamService teamService;
     MatchService matchService;
 
@@ -30,7 +29,7 @@ public class MatchController {
     public ResponseEntity<?> getAllMatches() {
         try {
             List<MatchDetailsDTO> matches = matchService.getAllMatches();
-            if (matches.isEmpty()) {
+            if (matches == null &&  matches.isEmpty() ) {
                 throw new MatchesNotFoundException("No matches found");
             }
             return ResponseEntity.ok(matches);
@@ -99,3 +98,4 @@ public class MatchController {
 
 
 }
+

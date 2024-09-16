@@ -36,4 +36,8 @@ public class TeamRegistration {
         this.team = team;
         this.groupType = groupType;
     }
+
+    public TeamRegistration(Team team) {
+        this.team = team;
+    }
 }

@@ -1,33 +1,29 @@
 package com.sbear.gameengineservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbear.gameengineservice.dto.*;
 import com.sbear.gameengineservice.entity.Tournament;
 import com.sbear.gameengineservice.entity.stats.PlayerStats;
 import com.sbear.gameengineservice.entity.stats.TeamStats;
 import com.sbear.gameengineservice.service.TournamentService;
 import com.sbear.gameengineservice.service.impl.MatchSchedulingService;
+import com.sbear.gameengineservice.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.http.ResponseEntity;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.mockito.Mockito.when;
-
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class TournamentControllerTest {
+
+    @InjectMocks
+    private TournamentController tournamentController;
 
     @Mock
     private TournamentService tournamentService;
@@ -35,96 +31,157 @@ public class TournamentControllerTest {
     @Mock
     private MatchSchedulingService matchSchedulingService;
 
-    @InjectMocks
-    private TournamentController tournamentController;
-
-    private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
-
     @BeforeEach
-    public void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(tournamentController).build();
-        objectMapper = new ObjectMapper();
     }
 
     @Test
-    public void testCreateTournament_Success() throws Exception {
+    public void testCreateTournament_Success() {
         TournamentDTO tournamentDTO = new TournamentDTO();
         Tournament savedTournament = new Tournament();
+        when(tournamentService.createTournament(any(TournamentDTO.class))).thenReturn(savedTournament);
 
-        when(tournamentService.createTournament(tournamentDTO)).thenReturn(savedTournament);
+        ResponseEntity<?> response = tournamentController.createTournament(tournamentDTO);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(tournamentDTO)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(savedTournament)));
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(savedTournament, response.getBody());
     }
 
     @Test
-    public void testGetAllTournaments_Success() throws Exception {
-        List<TournamentDTO> tournaments = Collections.singletonList(new TournamentDTO());
+    public void testCreateTournament_Failure() {
+        TournamentDTO tournamentDTO = new TournamentDTO();
+        when(tournamentService.createTournament(any(TournamentDTO.class)))
+                .thenThrow(new IllegalArgumentException("At least 6 teams are required"));
 
+        ResponseEntity<?> response = tournamentController.createTournament(tournamentDTO);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("At least 6 teams are required", response.getBody());
+    }
+
+    @Test
+    public void testGetAllTournamentsCreatedAdmin() {
+        List<TournamentDTO> tournaments = new ArrayList<>();
         when(tournamentService.getAllTournaments()).thenReturn(tournaments);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/get-all-tournaments")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(tournaments)));
+        ResponseEntity<List<TournamentDTO>> response = tournamentController.getAllTournamentsCreatedAdmin();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(tournaments, response.getBody());
     }
 
     @Test
     public void testRegisterTeamByTournamentID_Success() throws Exception {
-        Long tournamentId = 1L;
-        TeamRegistrationDTO teamRegistrationDTO = new TeamRegistrationDTO();
-        String result = "Team registered successfully";
+        TeamRegistrationDTO registrationDTO = new TeamRegistrationDTO();
+        when(tournamentService.registerTeamByTournamentID(anyLong(), any(TeamRegistrationDTO.class)))
+                .thenReturn("Team registered successfully in Group A");
 
-        when(tournamentService.registerTeamByTournamentID(tournamentId, teamRegistrationDTO)).thenReturn(result);
+        ResponseEntity<?> response = tournamentController.registerTeamByTournamentID(1L, registrationDTO);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/{tournamentId}/register", tournamentId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(teamRegistrationDTO)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.content().string(result));
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("Team registered successfully in Group A", response.getBody());
     }
 
     @Test
-    public void testGetRegisteredTeams_Success() throws Exception {
-        Long tournamentId = 1L;
-        List<TeamSummaryDTO> teams = Collections.singletonList(new TeamSummaryDTO());
+    public void testRegisterTeamByTournamentID_Failure() throws Exception {
+        TeamRegistrationDTO registrationDTO = new TeamRegistrationDTO();
+        when(tournamentService.registerTeamByTournamentID(anyLong(), any(TeamRegistrationDTO.class)))
+                .thenThrow(new IllegalArgumentException("Tournament is full"));
 
-        when(tournamentService.getRegisteredTeams(tournamentId)).thenReturn(teams);
+        ResponseEntity<?> response = tournamentController.registerTeamByTournamentID(1L, registrationDTO);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/{tournamentId}/teams", tournamentId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(teams)));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Tournament is full", response.getBody());
     }
 
     @Test
-    public void testGetSemiFinalScheduleMatches_Success() throws Exception {
-        Long tournamentId = 1L;
-        List<MatchDetailsDTO> matchDetails = Collections.singletonList(new MatchDetailsDTO());
+    public void testGetRegisteredTeams() {
+        List<TeamSummaryDTO> teamSummaries = new ArrayList<>();
+        when(tournamentService.getRegisteredTeams(anyLong())).thenReturn(teamSummaries);
 
-        when(matchSchedulingService.scheduleSemiFinals(tournamentId)).thenReturn(matchDetails);
+        ResponseEntity<List<TeamSummaryDTO>> response = tournamentController.getRegisteredTeams(1L);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/semifinal/schedule-matches/{tournamentId}", tournamentId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(matchDetails)));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(teamSummaries, response.getBody());
     }
 
     @Test
-    public void testGetMatchById_Success() throws Exception {
-        Long matchId = 1L;
-        MatchDetailsDTO matchDetailsDTO = new MatchDetailsDTO();
+    public void testScheduleRoundRobin_Success() {
+        List<MatchDetailsDTO> matchDetails = new ArrayList<>();
+        when(matchSchedulingService.scheduleGroupStageMatches(anyLong())).thenReturn(matchDetails);
 
-        when(tournamentService.getCricketMatchById(matchId)).thenReturn(matchDetailsDTO);
+        ResponseEntity<?> response = tournamentController.scheduleRoundRobin(1L);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/matches/{matchId}", matchId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(matchDetailsDTO)));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(matchDetails, response.getBody());
     }
+
+    @Test
+    public void testGetMatchesByTournamentId() {
+        Map<String, List<MatchDetailsDTO>> matches = new HashMap<>();
+        when(matchSchedulingService.getMatchesByTypeAndGroup(anyLong())).thenReturn(matches);
+
+        ResponseEntity<?> response = tournamentController.getMatchesByTournamentId(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(matches, response.getBody());
+    }
+
+    @Test
+    public void testGetTournamentById() {
+        TournamentDTO tournamentDTO = new TournamentDTO();
+        when(tournamentService.getTournamentById(anyLong())).thenReturn(tournamentDTO);
+
+        ResponseEntity<TournamentDTO> response = tournamentController.getTournamentById(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(tournamentDTO, response.getBody());
+    }
+
+    @Test
+    public void testGetMatchById_Success() {
+        MatchDetailsDTO matchDetails = new MatchDetailsDTO();
+        when(tournamentService.getCricketMatchById(anyLong())).thenReturn(matchDetails);
+
+        ResponseEntity<?> response = tournamentController.getMatchById(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(matchDetails, response.getBody());
+    }
+
+    @Test
+    public void testGetMatchById_NotFound() {
+        when(tournamentService.getCricketMatchById(anyLong()))
+                .thenThrow(new ResourceNotFoundException("Match not found with ID: 1"));
+
+        ResponseEntity<?> response = tournamentController.getMatchById(1L);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals("Match not found with ID: 1", response.getBody());
+    }
+
+    @Test
+    public void testGetALlPlayerStatsByMatchId() {
+        List<PlayerStats> playerStats = new ArrayList<>();
+        when(tournamentService.getALlPlayerStats(anyLong())).thenReturn(playerStats);
+
+        ResponseEntity<List<PlayerStats>> response = tournamentController.getALlPlayerStatsByMatchId(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(playerStats, response.getBody());
+    }
+
+    @Test
+    public void testGetAllTeamStatsByMatchId() {
+        List<TeamStats> teamStats = new ArrayList<>();
+        when(tournamentService.getAllTeamStats(anyLong())).thenReturn(teamStats);
+
+        ResponseEntity<List<TeamStats>> response = tournamentController.getAllTeamStatsByMatchId(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(teamStats, response.getBody());
+    }
+
+
 }

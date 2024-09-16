@@ -57,7 +57,8 @@ public class MatchServiceImpl implements MatchService {
             if (cricketMatch == null) {
                 throw new IllegalArgumentException("Cricket match details cannot be null");
             }
-            return cricketMatchRepository.save(cricketMatch);
+            cricketMatchRepository.save(cricketMatch);
+            return cricketMatch;
         } catch (Exception e) {
             throw new Exception("An error occurred: " + e.getMessage());
         }

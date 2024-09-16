@@ -30,7 +30,7 @@ public class CricketMatch {
     private String tossDecision; // e.g., "batting" or "bowling"
     @ManyToOne
     @Lazy
-    @JoinColumn(name = "team_a_id", nullable = false) // Column to store Team A ID
+    @JoinColumn(name = "team_a_id", nullable = false)// Column to store Team A ID
     private Team teamA;
 
     @ManyToOne

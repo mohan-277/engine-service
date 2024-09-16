@@ -302,10 +302,7 @@ public class CricketSimulation {
                 BallOutcomeUtil outcome = simulateBallEvent(inningsUtil, striker, nonStriker, bowler);
 
                 saveBallDetails(matchId, inningsUtil.getInningsId(), striker, nonStriker, bowler, oversCompleted, ballsInCurrentOver, outcome);
-                System.out.println("Match ID " + matchId);
-                System.out.println("Match ID " + inningsUtil.getInningsId());
-                System.out.println("Match ID " + striker.getPlayer().getName());
-                System.out.println(("Match ID "+ nonStriker.getPlayer().getName()));
+
 
                 // Print ball details
                 String ballDetail = "Ball Details: Runs Scored: " + outcome.getRuns();
@@ -584,7 +581,6 @@ public class CricketSimulation {
 
         // Set totalScore and wicketCount for the ballDetails
         ballDetails.setTotalScore(newTotalScore);
-        System.out.println(newTotalScore+" %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
         // Determine the updated wicket count
         int newWicketCount = innings.getWicketCount() != null ? innings.getWicketCount() : 0;
         if (ballDetails.getWicketType() != WicketType.NONE) {
@@ -597,13 +593,10 @@ public class CricketSimulation {
         ballDetails.setBallsBowled(bowler.getBallsBowled());
         ballDetails.setWicketsTaken(bowler.getWicketsTaken());
 
-        System.out.println(newWicketCount+" %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
         // Save the ball details first
         innings.setBalls(ballDetails.getInnings().getBalls());
         inningsRepository.save(innings);
 
-        System.out.println(innings+ " #########################   ");
-        System.out.println(ballDetails+ "&&&&&&&&&&&&&&&&&&&&&&&&&");
         ballRepository.save(ballDetails);
 
 
