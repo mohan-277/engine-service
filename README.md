@@ -81,3 +81,20 @@ To ensure the application is working as expected, you can run the unit and integ
 - **`[http://localhost:8080](http://localhost:8080)`**: This creates a hyperlink to the URL.
 
 Ensure that you have the closing code block delimiter (```) after your shell command to separate it from the following text.
+
+### Contribution
+
+### Akanksha Vishwakarma
+
+- **Get All Matches** (Commit: `1fb37092222cb6d0b6374ac4dabe72c322fad343`)
+    - Implemented functionality to retrieve all matches.
+
+- **Rescheduling Matches** (Commit: `a1c876ad63349756b2c349da06cb1ac7411d53ca`)
+    - Developed features to reschedule matches as needed.
+
+- **Get Match** (Commit: `f607d4d4fca12b45e32a570d28c8d7b560b0ce39`)
+    - implemented api to get match details by matchId 
+
+- **Semi Finals**
+    - helped to implement the semi-finals feature written a query logic so it will sort, 
+
