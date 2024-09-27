@@ -72,14 +72,5 @@ To ensure the application is working as expected, you can run the unit and integ
     mvn test
 
 
-### Explanation:
-- **`## Run the Application`**: This creates a level 2 heading for the "Run the Application" section.
-- **`To start the application, use the following command:`**: This is a paragraph describing what to do.
-- **````bash`** and **````**: These lines denote the beginning and end of a code block, specifically for shell commands.
-- **`## Access the Application`**: This creates a level 2 heading for the "Access the Application" section.
-- **`Once the application is running, you can access it at the following URL:`**: This is a paragraph describing how to access the application.
-- **`[http://localhost:8080](http://localhost:8080)`**: This creates a hyperlink to the URL.
-
-Ensure that you have the closing code block delimiter (```) after your shell command to separate it from the following text.
 
 
